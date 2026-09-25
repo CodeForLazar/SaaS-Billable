@@ -1,0 +1,33 @@
+# Local development services. Start with: docker compose up -d
+services:
+   # PostgreSQL — the app database
+   # Connection URL: postgresql://postgres:postgres@localhost:5432/saas_app
+   db:
+      image: postgres:18-alpine
+      restart: unless-stopped
+      environment:
+         POSTGRES_USER: postgres
+         POSTGRES_PASSWORD: postgres
+         POSTGRES_DB: saas_app
+      ports:
+         - '5432:5432'
+      volumes:
+         # Postgres 18+ images keep data under /var/lib/postgresql/<version>, so mount the parent dir
+         - db-data:/var/lib/postgresql
+      healthcheck:
+         test: ['CMD-SHELL', 'pg_isready -U postgres -d saas_app']
+         interval: 5s
+         timeout: 5s
+         retries: 10
+
+   # Mailpit — catches every email the app sends (nothing reaches real inboxes)
+   # SMTP for the app: localhost:1025 · Web inbox: http://localhost:8025
+   mailpit:
+      image: axllent/mailpit:latest
+      restart: unless-stopped
+      ports:
+         - '1025:1025'
+         - '8025:8025'
+
+volumes:
+   db-data:
