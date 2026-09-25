@@ -119,6 +119,7 @@ We'll refine this (indexes, constraints, enums) in the schema step and keep this
 
 - **Sessions** are stored in the DB (`Session` table). The browser holds an HTTP-only cookie with the session token. Optionally we enable the cookie cache to skip the DB lookup on each request.
 - **Endpoints** are served by one catch-all route handler: `app/api/auth/[...all]/route.ts`.
+- **Schema changes** (e.g. adding a plugin): `npm run auth:generate` writes Better Auth's models into `prisma/schema.prisma`, then `npm run db:migrate -- --name <name>` creates and applies the migration. Better Auth's own `migrate` command is not used with Prisma.
 - **Server side:** `auth.api.getSession({ headers })` in Server Components, Server Actions and Route Handlers. This is our `req.user`.
 - **Client side:** `authClient.signIn.email()`, `signUp.email()`, `signOut()`, `useSession()`.
 - **Email/password** with verification email and password reset. Both call our `sendEmail()` (Nodemailer).
@@ -136,7 +137,7 @@ Each phase is split into small steps when we start it.
 - [x] `.env.example` (`.gitignore` now allows it), npm scripts (`typecheck`, `db:generate`, `db:migrate`, `db:deploy`, `db:studio`, `postinstall: prisma generate`)
 
 ### Phase 1: Auth and organizations
-- [ ] Better Auth + Prisma adapter, route handler, **first migration** (auth tables)
+- [x] Better Auth + Prisma adapter, route handler, **first migration** (auth tables)
 - [ ] Nodemailer mailer + first email template
 - [ ] Sign up / sign in / sign out pages
 - [ ] Email verification + password reset
@@ -189,6 +190,7 @@ _Update at the end of each step: what was done and what's next._
 - **2026-09-25:** Added `docker-compose.yml`: Postgres 18 (`localhost:5432`, db `saas_app`, user/pass `postgres`) and Mailpit (SMTP `localhost:1025`, inbox http://localhost:8025). **Next step:** Phase 0.3, Prisma setup.
 - **2026-09-25:** Prisma 7.10.0 installed (pinned) with `@prisma/adapter-pg`. `prisma.config.ts` loads `.env` via dotenv; client generated to `lib/generated/prisma` (git-ignored); `lib/db.ts` singleton verified against Postgres 18. **Next step:** Phase 0.4, `.env.example` + npm scripts.
 - **2026-09-25:** Phase 0 done. `.env.example` added (only `DATABASE_URL` so far; each step adds its own vars). npm scripts added; `postinstall` verified to regenerate the client on a clean install. **Next step:** Phase 1.1, Better Auth + Prisma adapter, route handler, first migration.
+- **2026-09-25:** Better Auth 1.7.6 installed; `lib/auth.ts` (Prisma adapter, email/password, `nextCookies`); `/api/auth/[...all]` route handler; first migration `add_auth_tables` (user, session, account, verification). Verified with curl: sign-up sets `better-auth.session_token` cookie, get-session works, wrong password rejected, password stored as scrypt hash. **Next step:** Phase 1.2, Nodemailer mailer + first email template.
 
 ## 9. Decision log
 
@@ -204,6 +206,7 @@ _Update at the end of each step: what was done and what's next._
 | 2026-09-25 | No `import 'server-only'` in `lib/db.ts` | Scripts outside Next (seed, Better Auth CLI) import it; put `server-only` on `server/*` modules instead |
 | 2026-09-25 | First migration deferred to Better Auth step | Avoid a throwaway model; auth tables are the first real schema |
 | 2026-09-25 | Ignore `npm audit` highs from the Prisma CLI (`deepmerge-ts`, `mysql2`) | Dev-only CLI deps, not shipped; `audit fix --force` would downgrade to Prisma 6. Recheck on Prisma upgrades. |
+| 2026-09-25 | Better Auth **1.7.6**, pinned exact; CLI via `npx auth@1.7.6` (`auth:generate` script) | The old `@better-auth/cli` package is stale (1.4); the CLI now ships as the `auth` package. Pin CLI to the library version. |
 | _open_ | Enable Cache Components? | Decide in Phase 3 when we fetch data |
 | _open_ | PDF library | Decide in Phase 5 |
 | _open_ | Demo account protection strategy | Decide in Phase 8 |
