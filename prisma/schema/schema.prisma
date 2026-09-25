@@ -1,0 +1,12 @@
+// Prisma setup only: generator and database. The models live in the other .prisma files in this
+// folder, one file per domain (auth.prisma, and later client.prisma, project.prisma, ...).
+// Prisma reads every .prisma file in prisma/schema/ as one schema.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
