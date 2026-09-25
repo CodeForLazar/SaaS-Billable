@@ -24,7 +24,7 @@ export default function VerifyEmail({ name, url }: VerifyEmailProps) {
                   </Button>
                   <Hr className='my-6 border-zinc-200' />
                   <Text className='text-xs text-zinc-500'>
-                     If you didn&apos;t create an account, you can ignore this email.
+                     This link expires in 1 hour. If you didn&apos;t create an account, you can ignore this email.
                   </Text>
                </Container>
             </Body>

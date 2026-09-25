@@ -27,15 +27,17 @@ export async function signUp(_prevState: AuthFormState, formData: FormData): Pro
    }
 
    try {
-      // Creates the user and, through the nextCookies plugin, sets the session cookie.
-      await auth.api.signUpEmail({ body: parsed.data, headers: await headers() });
+      // Creates the user and emails a verification link. No session yet: that happens when the link
+      // is clicked. The link lands on callbackURL (/sign-in forwards signed-in users to the app).
+      // An already-registered email gets the same response, so this form can't reveal who has an account.
+      await auth.api.signUpEmail({ body: { ...parsed.data, callbackURL: '/sign-in' }, headers: await headers() });
    } catch (error) {
       if (error instanceof APIError) return { error: error.message, values };
       throw error;
    }
 
    // redirect() works by throwing, so it must stay outside the try/catch.
-   redirect('/dashboard');
+   redirect(`/check-email?email=${encodeURIComponent(parsed.data.email)}`);
 }
 
 export async function signIn(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -48,9 +50,15 @@ export async function signIn(_prevState: AuthFormState, formData: FormData): Pro
    }
 
    try {
-      await auth.api.signInEmail({ body: parsed.data, headers: await headers() });
+      await auth.api.signInEmail({ body: { ...parsed.data, callbackURL: '/sign-in' }, headers: await headers() });
    } catch (error) {
-      if (error instanceof APIError) return { error: error.message, values };
+      if (error instanceof APIError) {
+         // Better Auth has just emailed a fresh verification link (sendOnSignIn).
+         if (error.body?.code === 'EMAIL_NOT_VERIFIED') {
+            return { error: 'Please confirm your email first. We just sent you a new link.', values };
+         }
+         return { error: error.message, values };
+      }
       throw error;
    }
 
