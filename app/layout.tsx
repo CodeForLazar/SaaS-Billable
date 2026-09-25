@@ -21,7 +21,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
    return (
       <html lang='en' className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-         <body className='min-h-full flex flex-col'>{children}</body>
+         {/* Browser extensions (e.g. ColorZilla) add attributes to <body> before React loads.
+             This ignores attribute mismatches on <body> itself; its children are still checked. */}
+         <body className='min-h-full flex flex-col' suppressHydrationWarning>
+            {children}
+         </body>
       </html>
    );
 }
