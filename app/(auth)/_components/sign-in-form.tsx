@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -30,7 +31,15 @@ export function SignInForm() {
             </Field>
 
             <Field data-invalid={!!errors?.password}>
-               <FieldLabel htmlFor='password'>Password</FieldLabel>
+               <div className='flex items-center justify-between'>
+                  <FieldLabel htmlFor='password'>Password</FieldLabel>
+                  <Link
+                     href='/forgot-password'
+                     className='text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+                  >
+                     Forgot password?
+                  </Link>
+               </div>
                <Input
                   id='password'
                   name='password'

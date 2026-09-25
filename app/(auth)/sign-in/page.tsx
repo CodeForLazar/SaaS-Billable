@@ -18,7 +18,7 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
    // Signed in (including right after clicking a valid confirmation link)? Go to the app.
    if (await getSession()) redirect('/dashboard');
 
-   const { error } = await searchParams;
+   const { error, reset } = await searchParams;
    const linkError = typeof error === 'string' ? (linkErrors[error] ?? 'Something went wrong. Please try again.') : null;
 
    return (
@@ -28,6 +28,11 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
             <CardDescription>Sign in to your account.</CardDescription>
          </CardHeader>
          <CardContent className='flex flex-col gap-6'>
+            {reset === 'success' && (
+               <Alert>
+                  <AlertDescription>Your password has been changed. Sign in with your new password.</AlertDescription>
+               </Alert>
+            )}
             {linkError && (
                <Alert variant='destructive'>
                   <AlertDescription>{linkError}</AlertDescription>

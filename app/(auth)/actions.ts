@@ -5,15 +5,17 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
-import { signInSchema, signUpSchema } from '@/lib/validations/auth';
+import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from '@/lib/validations/auth';
 
-// What a form action sends back to the form: a general error, per-field errors,
-// and the values the user typed (React resets the form after an action, so we refill it).
+// What a form action sends back to the form: a general error, per-field errors, the values the
+// user typed (React resets the form after an action, so we refill it), and a success flag for
+// forms that stay on the page.
 export type AuthFormState =
    | {
         error?: string;
-        fieldErrors?: { name?: string[]; email?: string[]; password?: string[] };
+        fieldErrors?: { name?: string[]; email?: string[]; password?: string[]; confirmPassword?: string[] };
         values?: { name?: string; email?: string };
+        success?: boolean;
      }
    | undefined;
 
@@ -63,6 +65,50 @@ export async function signIn(_prevState: AuthFormState, formData: FormData): Pro
    }
 
    redirect('/dashboard');
+}
+
+export async function requestPasswordReset(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+   const input = Object.fromEntries(formData);
+   const values = { email: String(input.email ?? '') };
+
+   const parsed = forgotPasswordSchema.safeParse(input);
+   if (!parsed.success) {
+      return { fieldErrors: z.flattenError(parsed.error).fieldErrors, values };
+   }
+
+   // Emails a link that leads to /reset-password?token=... Unknown emails get the same response,
+   // so the form can't be used to find out who has an account.
+   await auth.api.requestPasswordReset({
+      body: { email: parsed.data.email, redirectTo: '/reset-password' },
+      headers: await headers()
+   });
+
+   return { success: true, values };
+}
+
+export async function resetPassword(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+   const parsed = resetPasswordSchema.safeParse(Object.fromEntries(formData));
+   if (!parsed.success) {
+      return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+   }
+
+   try {
+      // The token is single-use. Afterwards every session of this user is revoked (see lib/auth.ts).
+      await auth.api.resetPassword({
+         body: { token: parsed.data.token, newPassword: parsed.data.password },
+         headers: await headers()
+      });
+   } catch (error) {
+      if (error instanceof APIError) {
+         if (error.body?.code === 'INVALID_TOKEN') {
+            return { error: 'This reset link is invalid or has already been used. Please request a new one.' };
+         }
+         return { error: error.message };
+      }
+      throw error;
+   }
+
+   redirect('/sign-in?reset=success');
 }
 
 export async function signOut() {
