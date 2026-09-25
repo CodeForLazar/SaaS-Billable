@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
 const geistSans = Geist({
-   variable: '--font-geist-sans',
+   // shadcn's theme in globals.css reads the main font from --font-sans
+   variable: '--font-sans',
    subsets: ['latin']
 });
 
