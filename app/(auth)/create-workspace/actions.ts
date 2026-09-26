@@ -42,6 +42,5 @@ export async function createWorkspace(
       throw error;
    }
 
-   // Temporary: step 3 sends the user to /<slug>/dashboard instead.
-   redirect('/dashboard');
+   redirect(`/${parsed.data.slug}/dashboard`);
 }
