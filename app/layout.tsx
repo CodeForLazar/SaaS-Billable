@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
 const geistSans = Geist({
@@ -25,6 +26,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
              This ignores attribute mismatches on <body> itself; its children are still checked. */}
          <body className='min-h-full flex flex-col' suppressHydrationWarning>
             {children}
+            {/* Toast notifications for the whole app. theme='light' until we add a dark-mode toggle. */}
+            <Toaster theme='light' position='bottom-right' />
          </body>
       </html>
    );

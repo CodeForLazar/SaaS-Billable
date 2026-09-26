@@ -13,7 +13,9 @@ import {
 import { getMembersOverview } from '@/server/members';
 import { requireMembership } from '@/server/organizations';
 import { inviteMemberAction } from './actions';
+import { CancelInvitationButton, LeaveWorkspaceButton } from './invitation-actions';
 import { InviteForm } from './invite-form';
+import { MemberActions } from './member-actions';
 
 export async function generateMetadata({
    params
@@ -30,7 +32,8 @@ const formatDate = (date: Date) =>
 
 export default async function MembersPage({ params }: PageProps<'/[orgSlug]/settings/members'>) {
    const { orgSlug } = await params;
-   const { organization, currentUserId, members, invitations } = await getMembersOverview(orgSlug);
+   const { organization, members, invitations, canCancelInvitations, assignableRoles } =
+      await getMembersOverview(orgSlug);
 
    return (
       <main className='mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 py-16'>
@@ -54,6 +57,9 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                      <TableHead>Email</TableHead>
                      <TableHead>Role</TableHead>
                      <TableHead className='text-right'>Joined</TableHead>
+                     <TableHead className='w-10'>
+                        <span className='sr-only'>Actions</span>
+                     </TableHead>
                   </TableRow>
                </TableHeader>
                <TableBody>
@@ -61,7 +67,7 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                      <TableRow key={member.id}>
                         <TableCell className='font-medium'>
                            {member.user.name}
-                           {member.user.id === currentUserId && (
+                           {member.isMe && (
                               <span className='text-muted-foreground'> (you)</span>
                            )}
                         </TableCell>
@@ -82,6 +88,15 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                         </TableCell>
                         <TableCell className='text-right text-muted-foreground'>
                            {formatDate(member.createdAt)}
+                        </TableCell>
+                        <TableCell>
+                           <MemberActions
+                              orgSlug={organization.slug}
+                              member={{ id: member.id, name: member.user.name, role: member.role }}
+                              assignableRoles={assignableRoles}
+                              canChangeRole={member.canChangeRole}
+                              canRemove={member.canRemove}
+                           />
                         </TableCell>
                      </TableRow>
                   ))}
@@ -118,6 +133,11 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                            <TableHead>Role</TableHead>
                            <TableHead>Invited by</TableHead>
                            <TableHead className='text-right'>Expires</TableHead>
+                           {canCancelInvitations && (
+                              <TableHead className='w-10'>
+                                 <span className='sr-only'>Actions</span>
+                              </TableHead>
+                           )}
                         </TableRow>
                      </TableHeader>
                      <TableBody>
@@ -133,6 +153,15 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                               <TableCell className='text-right text-muted-foreground'>
                                  {formatDate(invitation.expiresAt)}
                               </TableCell>
+                              {canCancelInvitations && (
+                                 <TableCell className='text-right'>
+                                    <CancelInvitationButton
+                                       orgSlug={organization.slug}
+                                       invitationId={invitation.id}
+                                       email={invitation.email}
+                                    />
+                                 </TableCell>
+                              )}
                            </TableRow>
                         ))}
                      </TableBody>
@@ -140,6 +169,14 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                )}
             </section>
          )}
+
+         <section className='flex flex-col items-start gap-3 border-t pt-8'>
+            <h2 className='font-medium'>Leave workspace</h2>
+            <p className='text-sm text-muted-foreground'>
+               Remove yourself from {organization.name}. The last owner can&apos;t leave.
+            </p>
+            <LeaveWorkspaceButton orgSlug={organization.slug} organizationName={organization.name} />
+         </section>
       </main>
    );
 }
