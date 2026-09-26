@@ -1,0 +1,9 @@
+# Generated or managed by tools, formatted their own way
+components/ui/
+lib/generated/
+prisma/migrations/
+package-lock.json
+.next/
+
+# Markdown tables get padded column by column, which makes wide tables hard to edit
+*.md
