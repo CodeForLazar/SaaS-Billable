@@ -93,6 +93,7 @@ docs/
 ### Rules
 
 - **Tenant isolation:** every workspace page and service function starts with `requireMembership(orgSlug)` from `server/organizations.ts` (no session → `/sign-in`; not a member → `notFound()`, same as a non-existent workspace; else `{ session, organization, role }`). Every query on tenant data is scoped by `organizationId`. The service layer in `server/` takes the org ID from the verified session and membership, **never from client input**. Pages and actions call `server/*`, not Prisma directly.
+- **Permissions:** `can(role, { resource: ['action'] })` from `lib/permissions.ts`, built on Better Auth's default roles (owner: everything; admin: everything except deleting the workspace; member: no management rights). Handles combined roles (`"admin,member"`); unknown roles get nothing. In the browser it only hides UI; the server checks again. Our own resources (clients, invoices…) will be added to these roles later.
 - **Authorization lives next to the data.** Every server action and service function checks the session and the user's role. `proxy.ts` is only a convenience redirect.
 - **Money** is stored as integer **cents**, with a currency code on the organization.
 - **Time** is stored in UTC. Durations are stored in **seconds**.
@@ -168,7 +169,10 @@ Each phase is split into small steps when we start it.
 - [x] `[orgSlug]` routing with a server-side membership check (replaces `/dashboard`)
 - [x] Organization switcher + remember the last-used workspace across sign-ins
 - [x] `proxy.ts` optimistic redirect (real checks stay in pages + `server/`)
-- [ ] Invitations + roles
+- [x] Members page (read-only) `/[orgSlug]/settings/members` + `can()` permission helper
+- [ ] Invite by email (owners/admins): form, email template, sending
+- [ ] Accept an invitation (signed out / no account yet cases)
+- [ ] Manage members: change role, remove member, cancel invitation (no removing the last owner)
 
 ### Phase 2: App shell and UI
 - [x] shadcn/ui setup (done early, during Phase 1.3)
@@ -229,6 +233,7 @@ _Update at the end of each step: what was done and what's next._
 - **2026-09-26:** `server/organizations.ts` (`requireMembership`, `listMemberships`, `getHomeWorkspaceSlug`, all `server-only`). Pages `/[orgSlug]` (redirect) and `/[orgSlug]/dashboard` (placeholder: org name, role, workspace links, sign out, `generateMetadata` title). `/dashboard` is now a redirect. `createWorkspace` redirects to `/<slug>/dashboard`. Verified in Chrome: other user's workspace → 404, unknown slug → 404, signed out → `/sign-in`, `/sign-in` not captured by `[orgSlug]`, workspace links, sign-in lands in a workspace; build fails when a Client Component imports `server/organizations.ts`. **Next step:** Phase 1.5 step 4, organization switcher.
 - **2026-09-26:** Workspace switcher (shadcn dropdown-menu + new `DropdownMenuLinkItem`) on the workspace dashboard. `user.lastActiveOrganizationId` (migration `user_last_active_organization`) set by the new `[orgSlug]/layout.tsx` via `after()`; `/dashboard` uses it. Verified in Chrome: menu lists workspaces with a check on the current one, mouse + keyboard switching, last-used workspace restored after sign-out/in, client can't set the field (`FIELD_NOT_ALLOWED`), a foreign workspace id in the field is ignored. **Next step:** Phase 1.6, `proxy.ts` optimistic redirect.
 - **2026-09-26:** `proxy.ts` added. Verified with curl: public pages 200; `/api/*`, `/next.svg`, `/favicon.ico` untouched; no cookie → 307 `/sign-in` for `/dashboard`, `/create-workspace`, workspace URLs and even `/a/b/c` (no such page: proves the proxy acts first); forged cookie → passes the proxy, rejected by the page (`/sign-in`), `/a/b/c` → 404, `/sign-in` → 200 (no loop); real session → `/dashboard` → `/create-workspace`. Build lists `ƒ Proxy (Middleware)`. **Next step:** Phase 1.7, invitations + roles.
+- **2026-09-26:** Phase 1.7 split into 4 steps. Step 1: `lib/permissions.ts` (`can()`), `server/members.ts` (`getMembersOverview`: members for everyone, pending non-expired invitations only for roles with `invitation:create`), page `/[orgSlug]/settings/members` (shadcn table + badges), temporary link from the dashboard. Verified in Chrome with owner/admin/member/outsider: all members see the member list, only owner + admin see invitations (expired + accepted ones filtered out), outsider → 404. **Next step:** Phase 1.7 step 2, invite by email.
 
 ## 9. Decision log
 
