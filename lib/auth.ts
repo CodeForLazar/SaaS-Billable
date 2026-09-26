@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
+import { organization } from 'better-auth/plugins';
 import { after } from 'next/server';
 import { createElement } from 'react';
 import { db } from '@/lib/db';
@@ -53,6 +54,11 @@ export const auth = betterAuth({
       // after() keeps the function alive until the email is sent, even on serverless hosts.
       backgroundTasks: { handler: (promise) => after(promise) }
    },
-   // nextCookies lets server actions set the session cookie. It must stay last in the list.
-   plugins: [nextCookies()]
+   plugins: [
+      // Workspaces (tenants): organizations, their members + roles, invitations.
+      // The user who creates an organization becomes its "owner".
+      organization(),
+      // nextCookies lets server actions set the session cookie. It must stay last in the list.
+      nextCookies()
+   ]
 });
