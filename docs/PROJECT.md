@@ -94,6 +94,8 @@ docs/
 
 - **Tenant isolation:** every workspace page and service function starts with `requireMembership(orgSlug)` from `server/organizations.ts` (no session → `/sign-in`; not a member → `notFound()`, same as a non-existent workspace; else `{ session, organization, role }`). Every query on tenant data is scoped by `organizationId`. The service layer in `server/` takes the org ID from the verified session and membership, **never from client input**. Pages and actions call `server/*`, not Prisma directly.
 - **Permissions:** `can(role, { resource: ['action'] })` from `lib/permissions.ts`, built on Better Auth's default roles (owner: everything; admin: everything except deleting the workspace; member: no management rights). Handles combined roles (`"admin,member"`); unknown roles get nothing. In the browser it only hides UI; the server checks again. Our own resources (clients, invoices…) will be added to these roles later.
+- **Server Actions with a bound argument** (`action.bind(null, orgSlug)`): bound values are sent by the browser and can be tampered with, so treat them as input (the service re-checks them with `requireMembership`).
+- **After a mutation**, call `refresh()` from `next/cache` in the Server Action to re-render the current page's server data (Next 16). `revalidatePath`/`revalidateTag` are for invalidating *cached* data.
 - **Authorization lives next to the data.** Every server action and service function checks the session and the user's role. `proxy.ts` is only a convenience redirect.
 - **Money** is stored as integer **cents**, with a currency code on the organization.
 - **Time** is stored in UTC. Durations are stored in **seconds**.
@@ -146,6 +148,7 @@ We'll refine this (indexes, constraints, enums) in the schema step and keep this
 - **Workspace switcher** (`components/workspace-switcher.tsx`, client): data comes from the server as props; switching = navigating to `/<slug>/dashboard`. Uses `DropdownMenuLinkItem`, a small addition to `components/ui/dropdown-menu.tsx` wrapping Base UI's `Menu.LinkItem` with `render={<Link />}`.
 - **`server/` modules start with `import 'server-only'`**: importing them from a Client Component fails the build (verified).
 - **Note:** deleting a user removes their memberships (cascade) but **not** organizations they own; handle that explicitly if we add account deletion.
+- **Invitations:** owners/admins invite by email with role `member` or `admin` (`INVITABLE_ROLES`; owner is not invitable). `server/members.ts` `inviteMember()` checks membership + `can(role, { invitation: ['create'] })`, then `auth.api.createInvitation` with the org ID from the membership. Better Auth enforces it again (members → 403, admins can't invite owners, no duplicates, 48 h expiry, max 100 pending) and calls `sendInvitationEmail` (`emails/invitation.tsx`) with a link to `/accept-invitation/<id>` (reserved slug; must become a public path in step 3).
 - **Demo login:** a button that signs into the seeded demo account. The demo data is reset periodically, or protected from destructive actions (decide later).
 
 ## 7. Roadmap
@@ -170,7 +173,7 @@ Each phase is split into small steps when we start it.
 - [x] Organization switcher + remember the last-used workspace across sign-ins
 - [x] `proxy.ts` optimistic redirect (real checks stay in pages + `server/`)
 - [x] Members page (read-only) `/[orgSlug]/settings/members` + `can()` permission helper
-- [ ] Invite by email (owners/admins): form, email template, sending
+- [x] Invite by email (owners/admins): form, email template, sending
 - [ ] Accept an invitation (signed out / no account yet cases)
 - [ ] Manage members: change role, remove member, cancel invitation (no removing the last owner)
 
@@ -234,6 +237,7 @@ _Update at the end of each step: what was done and what's next._
 - **2026-09-26:** Workspace switcher (shadcn dropdown-menu + new `DropdownMenuLinkItem`) on the workspace dashboard. `user.lastActiveOrganizationId` (migration `user_last_active_organization`) set by the new `[orgSlug]/layout.tsx` via `after()`; `/dashboard` uses it. Verified in Chrome: menu lists workspaces with a check on the current one, mouse + keyboard switching, last-used workspace restored after sign-out/in, client can't set the field (`FIELD_NOT_ALLOWED`), a foreign workspace id in the field is ignored. **Next step:** Phase 1.6, `proxy.ts` optimistic redirect.
 - **2026-09-26:** `proxy.ts` added. Verified with curl: public pages 200; `/api/*`, `/next.svg`, `/favicon.ico` untouched; no cookie → 307 `/sign-in` for `/dashboard`, `/create-workspace`, workspace URLs and even `/a/b/c` (no such page: proves the proxy acts first); forged cookie → passes the proxy, rejected by the page (`/sign-in`), `/a/b/c` → 404, `/sign-in` → 200 (no loop); real session → `/dashboard` → `/create-workspace`. Build lists `ƒ Proxy (Middleware)`. **Next step:** Phase 1.7, invitations + roles.
 - **2026-09-26:** Phase 1.7 split into 4 steps. Step 1: `lib/permissions.ts` (`can()`), `server/members.ts` (`getMembersOverview`: members for everyone, pending non-expired invitations only for roles with `invitation:create`), page `/[orgSlug]/settings/members` (shadcn table + badges), temporary link from the dashboard. Verified in Chrome with owner/admin/member/outsider: all members see the member list, only owner + admin see invitations (expired + accepted ones filtered out), outsider → 404. **Next step:** Phase 1.7 step 2, invite by email.
+- **2026-09-26:** Invite by email: `emails/invitation.tsx`, `sendInvitationEmail` in `lib/auth.ts`, `inviteMember()` service, `inviteMemberAction` (Zod, bound `orgSlug`, `refresh()`), invite card on the members page (email + role via shadcn `native-select`), `accept-invitation` reserved. Verified end-to-end (Chrome + Mailpit): owner and admin invite, email arrives with the accept link, list refreshes without reload, duplicate/existing-member/invalid-email errors, member sees no form and gets 403 calling Better Auth directly, admin can't invite an owner (403). **Next step:** Phase 1.7 step 3, accept an invitation.
 
 ## 9. Decision log
 
