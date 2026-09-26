@@ -9,7 +9,13 @@ import { signUp } from '../actions';
 import { toFieldErrors } from './to-field-errors';
 
 // redirectTo: where to go after signing in (e.g. back to an invitation). defaultEmail pre-fills the field.
-export function SignUpForm({ redirectTo, defaultEmail }: { redirectTo?: string | null; defaultEmail?: string }) {
+export function SignUpForm({
+   redirectTo,
+   defaultEmail
+}: {
+   redirectTo?: string | null;
+   defaultEmail?: string;
+}) {
    // state = whatever signUp() returned last time; pending = true while it runs on the server
    const [state, formAction, pending] = useActionState(signUp, undefined);
    const errors = state?.fieldErrors;

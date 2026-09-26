@@ -20,7 +20,10 @@ export function safeRedirectPath(value: unknown): string | null {
 }
 
 /** Link to an auth page that keeps "where to go next" (and a pre-filled email) across pages. */
-export function authHref(path: '/sign-in' | '/sign-up', params: { redirectTo?: string | null; email?: string | null }) {
+export function authHref(
+   path: '/sign-in' | '/sign-up',
+   params: { redirectTo?: string | null; email?: string | null }
+) {
    const query = new URLSearchParams();
    if (params.redirectTo) query.set('redirectTo', params.redirectTo);
    if (params.email) query.set('email', params.email);

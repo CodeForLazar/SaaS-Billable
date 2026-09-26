@@ -42,7 +42,13 @@ type Props = {
 // The "⋯" menu on a member row. Server Actions are called straight from click handlers here
 // (no form): startTransition keeps the UI responsive and gives us a pending flag, and after
 // the action's refresh() the table re-renders with the new data.
-export function MemberActions({ orgSlug, member, assignableRoles, canChangeRole, canRemove }: Props) {
+export function MemberActions({
+   orgSlug,
+   member,
+   assignableRoles,
+   canChangeRole,
+   canRemove
+}: Props) {
    const [pending, startTransition] = useTransition();
    const [confirmOpen, setConfirmOpen] = useState(false);
    const currentRole = member.role.split(',')[0].trim();
@@ -74,7 +80,14 @@ export function MemberActions({ orgSlug, member, assignableRoles, canChangeRole,
       <>
          <DropdownMenu>
             <DropdownMenuTrigger
-               render={<Button variant='ghost' size='icon-sm' aria-label={`Actions for ${member.name}`} disabled={pending} />}
+               render={
+                  <Button
+                     variant='ghost'
+                     size='icon-sm'
+                     aria-label={`Actions for ${member.name}`}
+                     disabled={pending}
+                  />
+               }
             >
                <MoreHorizontal />
             </DropdownMenuTrigger>
@@ -82,7 +95,10 @@ export function MemberActions({ orgSlug, member, assignableRoles, canChangeRole,
                {canChangeRole && (
                   <DropdownMenuGroup>
                      <DropdownMenuLabel>Role</DropdownMenuLabel>
-                     <DropdownMenuRadioGroup value={currentRole} onValueChange={(value) => changeRole(value as Role)}>
+                     <DropdownMenuRadioGroup
+                        value={currentRole}
+                        onValueChange={(value) => changeRole(value as Role)}
+                     >
                         {assignableRoles.map((role) => (
                            // closeOnClick: picking a role is a final choice, so close the menu
                            <DropdownMenuRadioItem key={role} value={role} closeOnClick>
@@ -107,7 +123,8 @@ export function MemberActions({ orgSlug, member, assignableRoles, canChangeRole,
                <AlertDialogHeader>
                   <AlertDialogTitle>Remove {member.name}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                     They&apos;ll lose access to this workspace right away. You can invite them again later.
+                     They&apos;ll lose access to this workspace right away. You can invite them
+                     again later.
                   </AlertDialogDescription>
                </AlertDialogHeader>
                <AlertDialogFooter>

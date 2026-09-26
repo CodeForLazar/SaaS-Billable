@@ -35,7 +35,10 @@ export async function createWorkspace(
       if (error instanceof APIError) {
          const code = error.body?.code;
          if (code === 'ORGANIZATION_ALREADY_EXISTS' || code === 'ORGANIZATION_SLUG_ALREADY_TAKEN') {
-            return { fieldErrors: { slug: ['This URL is already taken. Please choose another one.'] }, values };
+            return {
+               fieldErrors: { slug: ['This URL is already taken. Please choose another one.'] },
+               values
+            };
          }
          return { error: error.message, values };
       }

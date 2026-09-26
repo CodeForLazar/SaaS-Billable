@@ -16,13 +16,20 @@ export default async function CheckEmailPage({ searchParams }: PageProps<'/check
             <CardTitle className='text-xl'>Check your email</CardTitle>
             <CardDescription>
                We sent a confirmation link to{' '}
-               {typeof email === 'string' ? <strong className='text-foreground'>{email}</strong> : 'your email address'}.
-               Click it to activate your account. The link expires in 1 hour.
+               {typeof email === 'string' ? (
+                  <strong className='text-foreground'>{email}</strong>
+               ) : (
+                  'your email address'
+               )}
+               . Click it to activate your account. The link expires in 1 hour.
             </CardDescription>
          </CardHeader>
          <CardFooter className='justify-center text-sm text-muted-foreground'>
             Link expired?&nbsp;
-            <Link href='/sign-in' className='font-medium text-foreground underline underline-offset-4'>
+            <Link
+               href='/sign-in'
+               className='font-medium text-foreground underline underline-offset-4'
+            >
                Sign in
             </Link>
             &nbsp;to get a new one.

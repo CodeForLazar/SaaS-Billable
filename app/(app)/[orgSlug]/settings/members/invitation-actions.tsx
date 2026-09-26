@@ -16,7 +16,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { cancelInvitationAction, leaveWorkspaceAction } from './actions';
 
-export function CancelInvitationButton({ orgSlug, invitationId, email }: { orgSlug: string; invitationId: string; email: string }) {
+export function CancelInvitationButton({
+   orgSlug,
+   invitationId,
+   email
+}: {
+   orgSlug: string;
+   invitationId: string;
+   email: string;
+}) {
    const [pending, startTransition] = useTransition();
 
    return (
@@ -37,18 +45,27 @@ export function CancelInvitationButton({ orgSlug, invitationId, email }: { orgSl
    );
 }
 
-export function LeaveWorkspaceButton({ orgSlug, organizationName }: { orgSlug: string; organizationName: string }) {
+export function LeaveWorkspaceButton({
+   orgSlug,
+   organizationName
+}: {
+   orgSlug: string;
+   organizationName: string;
+}) {
    const [pending, startTransition] = useTransition();
    const [open, setOpen] = useState(false);
 
    return (
       <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
-         <AlertDialogTrigger render={<Button variant='outline' />}>Leave workspace</AlertDialogTrigger>
+         <AlertDialogTrigger render={<Button variant='outline' />}>
+            Leave workspace
+         </AlertDialogTrigger>
          <AlertDialogContent>
             <AlertDialogHeader>
                <AlertDialogTitle>Leave {organizationName}?</AlertDialogTitle>
                <AlertDialogDescription>
-                  You&apos;ll lose access to this workspace. Someone will have to invite you again to come back.
+                  You&apos;ll lose access to this workspace. Someone will have to invite you again
+                  to come back.
                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

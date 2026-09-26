@@ -67,9 +67,7 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                      <TableRow key={member.id}>
                         <TableCell className='font-medium'>
                            {member.user.name}
-                           {member.isMe && (
-                              <span className='text-muted-foreground'> (you)</span>
-                           )}
+                           {member.isMe && <span className='text-muted-foreground'> (you)</span>}
                         </TableCell>
                         <TableCell className='text-muted-foreground'>{member.user.email}</TableCell>
                         <TableCell>
@@ -175,7 +173,10 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
             <p className='text-sm text-muted-foreground'>
                Remove yourself from {organization.name}. The last owner can&apos;t leave.
             </p>
-            <LeaveWorkspaceButton orgSlug={organization.slug} organizationName={organization.name} />
+            <LeaveWorkspaceButton
+               orgSlug={organization.slug}
+               organizationName={organization.name}
+            />
          </section>
       </main>
    );

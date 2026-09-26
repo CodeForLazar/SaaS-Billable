@@ -21,7 +21,10 @@ export const requireMembership = cache(async (orgSlug: string) => {
 
    const membership = await db.member.findFirst({
       where: { userId: session.user.id, organization: { slug: orgSlug } },
-      select: { role: true, organization: { select: { id: true, name: true, slug: true, logo: true } } }
+      select: {
+         role: true,
+         organization: { select: { id: true, name: true, slug: true, logo: true } }
+      }
    });
    if (!membership) notFound();
 
@@ -42,7 +45,10 @@ export const listMemberships = cache(async (userId: string) => {
  * sign-in): the workspace they were last in, if they're still a member, else their first one,
  * else null (they have none yet).
  */
-export async function getHomeWorkspaceSlug(userId: string, lastActiveOrganizationId?: string | null) {
+export async function getHomeWorkspaceSlug(
+   userId: string,
+   lastActiveOrganizationId?: string | null
+) {
    const memberships = await listMemberships(userId);
    const last = memberships.find((m) => m.organization.id === lastActiveOrganizationId);
    return (last ?? memberships[0])?.organization.slug ?? null;
@@ -50,5 +56,8 @@ export async function getHomeWorkspaceSlug(userId: string, lastActiveOrganizatio
 
 /** Remember the workspace the user is in, so the next sign-in returns to it. */
 export async function rememberActiveWorkspace(userId: string, organizationId: string) {
-   await db.user.update({ where: { id: userId }, data: { lastActiveOrganizationId: organizationId } });
+   await db.user.update({
+      where: { id: userId },
+      data: { lastActiveOrganizationId: organizationId }
+   });
 }

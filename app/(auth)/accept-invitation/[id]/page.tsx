@@ -13,7 +13,9 @@ export const metadata: Metadata = { title: 'Invitation' };
 
 // Opened from the invitation email. Public (see proxy.ts), because the invitee may not be signed
 // in or may not even have an account yet. Four situations, one card each.
-export default async function AcceptInvitationPage({ params }: PageProps<'/accept-invitation/[id]'>) {
+export default async function AcceptInvitationPage({
+   params
+}: PageProps<'/accept-invitation/[id]'>) {
    const { id } = await params;
    const invitation = await getOpenInvitation(id);
 
@@ -24,11 +26,15 @@ export default async function AcceptInvitationPage({ params }: PageProps<'/accep
             <CardHeader>
                <CardTitle className='text-xl'>Invitation not valid</CardTitle>
                <CardDescription>
-                  This invitation has expired or was already used. Ask the person who invited you to send a new one.
+                  This invitation has expired or was already used. Ask the person who invited you to
+                  send a new one.
                </CardDescription>
             </CardHeader>
             <CardContent>
-               <Link href='/dashboard' className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
+               <Link
+                  href='/dashboard'
+                  className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
+               >
                   Go to the app
                </Link>
             </CardContent>
@@ -43,7 +49,8 @@ export default async function AcceptInvitationPage({ params }: PageProps<'/accep
       <>
          <strong className='text-foreground'>{invitation.inviterName}</strong> invited you to join{' '}
          <strong className='text-foreground'>{invitation.organization.name}</strong> as{' '}
-         {invitation.role === 'admin' ? 'an' : 'a'} <strong className='text-foreground'>{invitation.role}</strong>.
+         {invitation.role === 'admin' ? 'an' : 'a'}{' '}
+         <strong className='text-foreground'>{invitation.role}</strong>.
       </>
    );
 
@@ -80,8 +87,9 @@ export default async function AcceptInvitationPage({ params }: PageProps<'/accep
             <CardHeader>
                <CardTitle className='text-xl'>{title}</CardTitle>
                <CardDescription>
-                  This invitation was sent to <strong className='text-foreground'>{invitation.email}</strong>, but
-                  you&apos;re signed in as <strong className='text-foreground'>{session.user.email}</strong>.
+                  This invitation was sent to{' '}
+                  <strong className='text-foreground'>{invitation.email}</strong>, but you&apos;re
+                  signed in as <strong className='text-foreground'>{session.user.email}</strong>.
                </CardDescription>
             </CardHeader>
             <CardContent>

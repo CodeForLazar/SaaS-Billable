@@ -39,7 +39,9 @@ export async function inviteMemberAction(
 
    const result = await inviteMember(orgSlug, parsed.data);
    if (!result.ok) {
-      return result.field ? { fieldErrors: { [result.field]: [result.message] }, values } : { error: result.message, values };
+      return result.field
+         ? { fieldErrors: { [result.field]: [result.message] }, values }
+         : { error: result.message, values };
    }
 
    // Re-render this page's server data so the new invitation shows up in the list.
@@ -53,22 +55,34 @@ export async function inviteMemberAction(
 const id = z.string().min(1).max(100);
 const invalid: MemberActionResult = { ok: false, message: 'Invalid request.' };
 
-export async function updateMemberRoleAction(orgSlug: string, memberId: string, role: string): Promise<MemberActionResult> {
-   const parsed = z.object({ memberId: id, role: z.enum(['member', 'admin', 'owner']) }).safeParse({ memberId, role });
+export async function updateMemberRoleAction(
+   orgSlug: string,
+   memberId: string,
+   role: string
+): Promise<MemberActionResult> {
+   const parsed = z
+      .object({ memberId: id, role: z.enum(['member', 'admin', 'owner']) })
+      .safeParse({ memberId, role });
    if (!parsed.success) return invalid;
    const result = await updateMemberRole(orgSlug, parsed.data.memberId, parsed.data.role);
    if (result.ok) refresh();
    return result;
 }
 
-export async function removeMemberAction(orgSlug: string, memberId: string): Promise<MemberActionResult> {
+export async function removeMemberAction(
+   orgSlug: string,
+   memberId: string
+): Promise<MemberActionResult> {
    if (!id.safeParse(memberId).success) return invalid;
    const result = await removeMember(orgSlug, memberId);
    if (result.ok) refresh();
    return result;
 }
 
-export async function cancelInvitationAction(orgSlug: string, invitationId: string): Promise<MemberActionResult> {
+export async function cancelInvitationAction(
+   orgSlug: string,
+   invitationId: string
+): Promise<MemberActionResult> {
    if (!id.safeParse(invitationId).success) return invalid;
    const result = await cancelInvitation(orgSlug, invitationId);
    if (result.ok) refresh();

@@ -46,7 +46,10 @@ export function ResetPasswordForm({ token }: { token: string }) {
                <Alert variant='destructive'>
                   <AlertDescription>
                      {state.error}{' '}
-                     <Link href='/forgot-password' className='font-medium underline underline-offset-4'>
+                     <Link
+                        href='/forgot-password'
+                        className='font-medium underline underline-offset-4'
+                     >
                         Request a new link
                      </Link>
                   </AlertDescription>

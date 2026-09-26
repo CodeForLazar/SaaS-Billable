@@ -9,14 +9,24 @@ import { type NextRequest, NextResponse } from 'next/server';
 // an expired or forged cookie gets past this proxy and is rejected there.
 
 // Pages anyone may open. Everything else (workspaces, /dashboard, /create-workspace) needs a session.
-const PUBLIC_PATHS = new Set(['/', '/sign-in', '/sign-up', '/check-email', '/forgot-password', '/reset-password']);
+const PUBLIC_PATHS = new Set([
+   '/',
+   '/sign-in',
+   '/sign-up',
+   '/check-email',
+   '/forgot-password',
+   '/reset-password'
+]);
 
 // Public pages with a variable part: the invitation page must open for people who aren't signed in yet.
 const PUBLIC_PREFIXES = ['/accept-invitation/'];
 
 export function proxy(request: NextRequest) {
    const { pathname } = request.nextUrl;
-   if (PUBLIC_PATHS.has(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+   if (
+      PUBLIC_PATHS.has(pathname) ||
+      PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+   ) {
       return NextResponse.next();
    }
 

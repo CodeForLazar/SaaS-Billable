@@ -1,7 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+   Card,
+   CardContent,
+   CardDescription,
+   CardFooter,
+   CardHeader,
+   CardTitle
+} from '@/components/ui/card';
 import { ResetPasswordForm } from '../_components/reset-password-form';
 
 export const metadata: Metadata = { title: 'Reset password' };
@@ -26,7 +33,10 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<'/re
                <Alert variant='destructive'>
                   <AlertDescription>
                      This reset link is invalid or has expired.{' '}
-                     <Link href='/forgot-password' className='font-medium underline underline-offset-4'>
+                     <Link
+                        href='/forgot-password'
+                        className='font-medium underline underline-offset-4'
+                     >
                         Request a new link
                      </Link>
                   </AlertDescription>
@@ -34,7 +44,10 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<'/re
             )}
          </CardContent>
          <CardFooter className='justify-center text-sm text-muted-foreground'>
-            <Link href='/sign-in' className='font-medium text-foreground underline underline-offset-4'>
+            <Link
+               href='/sign-in'
+               className='font-medium text-foreground underline underline-offset-4'
+            >
                Back to sign in
             </Link>
          </CardFooter>

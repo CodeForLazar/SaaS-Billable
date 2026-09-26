@@ -24,7 +24,8 @@ export const getOpenInvitation = cache(async (invitationId: string) => {
          user: { select: { name: true } } // the inviter
       }
    });
-   if (!invitation || invitation.status !== 'pending' || invitation.expiresAt < new Date()) return null;
+   if (!invitation || invitation.status !== 'pending' || invitation.expiresAt < new Date())
+      return null;
 
    return {
       id: invitation.id,
@@ -36,7 +37,8 @@ export const getOpenInvitation = cache(async (invitationId: string) => {
    };
 });
 
-export type InvitationResult = { ok: true; organizationSlug: string } | { ok: false; message: string };
+export type InvitationResult =
+   { ok: true; organizationSlug: string } | { ok: false; message: string };
 
 const invalidMessage = 'This invitation is no longer valid. Ask for a new one.';
 
@@ -49,7 +51,9 @@ export async function acceptInvitation(invitationId: string): Promise<Invitation
    // constraint on member would reject a second membership anyway.
    const session = await getSession();
    const existing = session
-      ? await db.member.findFirst({ where: { userId: session.user.id, organizationId: invitation.organization.id } })
+      ? await db.member.findFirst({
+           where: { userId: session.user.id, organizationId: invitation.organization.id }
+        })
       : null;
    if (existing) return { ok: true, organizationSlug: invitation.organization.slug };
 
@@ -61,7 +65,8 @@ export async function acceptInvitation(invitationId: string): Promise<Invitation
       if (error.body?.code === 'YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION') {
          return { ok: false, message: `This invitation was sent to ${invitation.email}.` };
       }
-      if (error.body?.code === 'INVITATION_NOT_FOUND') return { ok: false, message: invalidMessage };
+      if (error.body?.code === 'INVITATION_NOT_FOUND')
+         return { ok: false, message: invalidMessage };
       return { ok: false, message: error.message };
    }
 }

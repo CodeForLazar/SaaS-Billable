@@ -10,7 +10,13 @@ import { signIn } from '../actions';
 import { toFieldErrors } from './to-field-errors';
 
 // redirectTo: where to go after signing in (e.g. back to an invitation). defaultEmail pre-fills the field.
-export function SignInForm({ redirectTo, defaultEmail }: { redirectTo?: string | null; defaultEmail?: string }) {
+export function SignInForm({
+   redirectTo,
+   defaultEmail
+}: {
+   redirectTo?: string | null;
+   defaultEmail?: string;
+}) {
    const [state, formAction, pending] = useActionState(signIn, undefined);
    const errors = state?.fieldErrors;
 

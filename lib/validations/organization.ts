@@ -13,7 +13,10 @@ export const createWorkspaceSchema = z.object({
       .min(3, 'URL must be at least 3 characters')
       .max(SLUG_MAX_LENGTH, `URL must be at most ${SLUG_MAX_LENGTH} characters`)
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and single dashes')
-      .refine((slug) => !RESERVED_SLUGS.has(slug), 'This URL is reserved. Please choose another one.')
+      .refine(
+         (slug) => !RESERVED_SLUGS.has(slug),
+         'This URL is reserved. Please choose another one.'
+      )
 });
 
 // Roles that can be given through an invitation. Making someone an owner is a separate,

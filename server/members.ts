@@ -18,13 +18,28 @@ export async function getMembersOverview(orgSlug: string) {
       db.member.findMany({
          where: { organizationId: organization.id },
          orderBy: { createdAt: 'asc' },
-         select: { id: true, role: true, createdAt: true, user: { select: { id: true, name: true, email: true } } }
+         select: {
+            id: true,
+            role: true,
+            createdAt: true,
+            user: { select: { id: true, name: true, email: true } }
+         }
       }),
       canManageInvitations
          ? db.invitation.findMany({
-              where: { organizationId: organization.id, status: 'pending', expiresAt: { gt: new Date() } },
+              where: {
+                 organizationId: organization.id,
+                 status: 'pending',
+                 expiresAt: { gt: new Date() }
+              },
               orderBy: { createdAt: 'desc' },
-              select: { id: true, email: true, role: true, expiresAt: true, user: { select: { name: true } } }
+              select: {
+                 id: true,
+                 email: true,
+                 role: true,
+                 expiresAt: true,
+                 user: { select: { name: true } }
+              }
            })
          : Promise.resolve(null)
    ]);
@@ -37,7 +52,12 @@ export async function getMembersOverview(orgSlug: string) {
    const rows = members.map((member) => {
       const isMe = member.user.id === session.user.id;
       const touchable = !hasRole(member.role, 'owner') || iAmOwner; // only owners manage owners
-      return { ...member, isMe, canChangeRole: !isMe && canUpdate && touchable, canRemove: !isMe && canDelete && touchable };
+      return {
+         ...member,
+         isMe,
+         canChangeRole: !isMe && canUpdate && touchable,
+         canRemove: !isMe && canDelete && touchable
+      };
    });
 
    return {
@@ -47,7 +67,9 @@ export async function getMembersOverview(orgSlug: string) {
       invitations,
       canCancelInvitations: can(role, { invitation: ['cancel'] }),
       // Only owners can make someone an owner.
-      assignableRoles: iAmOwner ? (['member', 'admin', 'owner'] as const) : (['member', 'admin'] as const)
+      assignableRoles: iAmOwner
+         ? (['member', 'admin', 'owner'] as const)
+         : (['member', 'admin'] as const)
    };
 }
 
@@ -62,7 +84,10 @@ export type InviteResult = { ok: true } | { ok: false; field?: 'email'; message:
  * never from the form. Better Auth checks the permission again and sends the email
  * (sendInvitationEmail in lib/auth.ts).
  */
-export async function inviteMember(orgSlug: string, input: { email: string; role: 'member' | 'admin' }): Promise<InviteResult> {
+export async function inviteMember(
+   orgSlug: string,
+   input: { email: string; role: 'member' | 'admin' }
+): Promise<InviteResult> {
    const { organization, role } = await requireMembership(orgSlug);
    if (!can(role, { invitation: ['create'] })) {
       return { ok: false, message: 'You are not allowed to invite members to this workspace.' };
@@ -78,9 +103,17 @@ export async function inviteMember(orgSlug: string, input: { email: string; role
       if (!(error instanceof APIError)) throw error;
       switch (error.body?.code) {
          case 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION':
-            return { ok: false, field: 'email', message: 'This person is already a member of this workspace.' };
+            return {
+               ok: false,
+               field: 'email',
+               message: 'This person is already a member of this workspace.'
+            };
          case 'USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION':
-            return { ok: false, field: 'email', message: 'This person already has a pending invitation.' };
+            return {
+               ok: false,
+               field: 'email',
+               message: 'This person already has a pending invitation.'
+            };
          default:
             return { ok: false, message: error.message };
       }
@@ -99,7 +132,8 @@ const friendlyErrors: Record<string, string> = {
       'A workspace needs at least one owner. Make someone else an owner first.',
    YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
       'You are the only owner. Make someone else an owner before leaving or removing yourself.',
-   YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_MEMBER: 'Only owners can change an owner, or make someone an owner.',
+   YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_MEMBER:
+      'Only owners can change an owner, or make someone an owner.',
    YOU_ARE_NOT_ALLOWED_TO_DELETE_THIS_MEMBER: 'You are not allowed to remove this member.',
    YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_INVITATION: 'You are not allowed to cancel this invitation.',
    MEMBER_NOT_FOUND: 'This member is no longer part of the workspace.'
@@ -116,7 +150,11 @@ async function callBetterAuth(run: () => Promise<unknown>): Promise<MemberAction
    }
 }
 
-export async function updateMemberRole(orgSlug: string, memberId: string, newRole: 'member' | 'admin' | 'owner') {
+export async function updateMemberRole(
+   orgSlug: string,
+   memberId: string,
+   newRole: 'member' | 'admin' | 'owner'
+) {
    const { organization } = await requireMembership(orgSlug);
    return callBetterAuth(async () =>
       auth.api.updateMemberRole({
@@ -144,12 +182,17 @@ export async function cancelInvitation(orgSlug: string, invitationId: string) {
       select: { id: true }
    });
    if (!invitation) return { ok: false, message: 'This invitation no longer exists.' } as const;
-   return callBetterAuth(async () => auth.api.cancelInvitation({ body: { invitationId }, headers: await headers() }));
+   return callBetterAuth(async () =>
+      auth.api.cancelInvitation({ body: { invitationId }, headers: await headers() })
+   );
 }
 
 export async function leaveWorkspace(orgSlug: string) {
    const { organization } = await requireMembership(orgSlug);
    return callBetterAuth(async () =>
-      auth.api.leaveOrganization({ body: { organizationId: organization.id }, headers: await headers() })
+      auth.api.leaveOrganization({
+         body: { organizationId: organization.id },
+         headers: await headers()
+      })
    );
 }

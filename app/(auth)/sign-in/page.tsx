@@ -2,7 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+   Card,
+   CardContent,
+   CardDescription,
+   CardFooter,
+   CardHeader,
+   CardTitle
+} from '@/components/ui/card';
 import { authHref, safeRedirectPath } from '@/lib/safe-redirect';
 import { getSession } from '@/lib/session';
 import { SignInForm } from '../_components/sign-in-form';
@@ -24,7 +31,10 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
    // were going (e.g. an invitation), otherwise to their workspace.
    if (await getSession()) redirect(redirectTo ?? '/dashboard');
 
-   const linkError = typeof error === 'string' ? (linkErrors[error] ?? 'Something went wrong. Please try again.') : null;
+   const linkError =
+      typeof error === 'string'
+         ? (linkErrors[error] ?? 'Something went wrong. Please try again.')
+         : null;
 
    return (
       <Card>
@@ -35,7 +45,9 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
          <CardContent className='flex flex-col gap-6'>
             {reset === 'success' && (
                <Alert>
-                  <AlertDescription>Your password has been changed. Sign in with your new password.</AlertDescription>
+                  <AlertDescription>
+                     Your password has been changed. Sign in with your new password.
+                  </AlertDescription>
                </Alert>
             )}
             {linkError && (
@@ -47,7 +59,10 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
          </CardContent>
          <CardFooter className='justify-center text-sm text-muted-foreground'>
             Don&apos;t have an account?&nbsp;
-            <Link href={authHref('/sign-up', { redirectTo, email: defaultEmail })} className='font-medium text-foreground underline underline-offset-4'>
+            <Link
+               href={authHref('/sign-up', { redirectTo, email: defaultEmail })}
+               className='font-medium text-foreground underline underline-offset-4'
+            >
                Sign up
             </Link>
          </CardFooter>

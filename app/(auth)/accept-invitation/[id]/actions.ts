@@ -17,7 +17,9 @@ export async function acceptInvitationAction(invitationId: string): Promise<Invi
    redirect(`/${result.organizationSlug}/dashboard`);
 }
 
-export async function declineInvitationAction(invitationId: string): Promise<InvitationActionState> {
+export async function declineInvitationAction(
+   invitationId: string
+): Promise<InvitationActionState> {
    const result = await declineInvitation(invitationId);
    if (!result.ok) return { error: result.message };
    redirect('/dashboard');
@@ -27,5 +29,10 @@ export async function declineInvitationAction(invitationId: string): Promise<Inv
 export async function switchAccountAction(invitationId: string) {
    const invitation = await getOpenInvitation(invitationId);
    await auth.api.signOut({ headers: await headers() });
-   redirect(authHref('/sign-in', { redirectTo: `/accept-invitation/${invitationId}`, email: invitation?.email }));
+   redirect(
+      authHref('/sign-in', {
+         redirectTo: `/accept-invitation/${invitationId}`,
+         email: invitation?.email
+      })
+   );
 }

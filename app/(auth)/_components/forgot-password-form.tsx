@@ -20,8 +20,8 @@ export function ForgotPasswordForm() {
             <MailCheck />
             <AlertTitle>Check your email</AlertTitle>
             <AlertDescription>
-               If an account exists for {state.values?.email}, we sent a link to reset your password. It expires
-               in 1 hour.
+               If an account exists for {state.values?.email}, we sent a link to reset your
+               password. It expires in 1 hour.
             </AlertDescription>
          </Alert>
       );

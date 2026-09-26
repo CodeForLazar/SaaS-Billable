@@ -14,7 +14,8 @@ export default async function CreateWorkspacePage() {
          <CardHeader>
             <CardTitle className='text-xl'>Create your workspace</CardTitle>
             <CardDescription>
-               A workspace holds your clients, projects, time and invoices. You can invite teammates later.
+               A workspace holds your clients, projects, time and invoices. You can invite teammates
+               later.
             </CardDescription>
          </CardHeader>
          <CardContent>

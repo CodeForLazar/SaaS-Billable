@@ -6,7 +6,12 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { safeRedirectPath } from '@/lib/safe-redirect';
-import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from '@/lib/validations/auth';
+import {
+   forgotPasswordSchema,
+   resetPasswordSchema,
+   signInSchema,
+   signUpSchema
+} from '@/lib/validations/auth';
 
 // What a form action sends back to the form: a general error, per-field errors, the values the
 // user typed (React resets the form after an action, so we refill it), and a success flag for
@@ -14,7 +19,12 @@ import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema }
 export type AuthFormState =
    | {
         error?: string;
-        fieldErrors?: { name?: string[]; email?: string[]; password?: string[]; confirmPassword?: string[] };
+        fieldErrors?: {
+           name?: string[];
+           email?: string[];
+           password?: string[];
+           confirmPassword?: string[];
+        };
         values?: { name?: string; email?: string };
         success?: boolean;
      }
@@ -26,7 +36,10 @@ function confirmationCallbackURL(redirectTo: string | null) {
    return redirectTo ? `/sign-in?redirectTo=${encodeURIComponent(redirectTo)}` : '/sign-in';
 }
 
-export async function signUp(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+export async function signUp(
+   _prevState: AuthFormState,
+   formData: FormData
+): Promise<AuthFormState> {
    const input = Object.fromEntries(formData);
    const values = { name: String(input.name ?? ''), email: String(input.email ?? '') };
    // Checked again here: the hidden field comes from the browser.
@@ -54,7 +67,10 @@ export async function signUp(_prevState: AuthFormState, formData: FormData): Pro
    redirect(`/check-email?email=${encodeURIComponent(parsed.data.email)}`);
 }
 
-export async function signIn(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+export async function signIn(
+   _prevState: AuthFormState,
+   formData: FormData
+): Promise<AuthFormState> {
    const input = Object.fromEntries(formData);
    const values = { email: String(input.email ?? '') };
    const redirectTo = safeRedirectPath(input.redirectTo);
@@ -73,7 +89,10 @@ export async function signIn(_prevState: AuthFormState, formData: FormData): Pro
       if (error instanceof APIError) {
          // Better Auth has just emailed a fresh verification link (sendOnSignIn).
          if (error.body?.code === 'EMAIL_NOT_VERIFIED') {
-            return { error: 'Please confirm your email first. We just sent you a new link.', values };
+            return {
+               error: 'Please confirm your email first. We just sent you a new link.',
+               values
+            };
          }
          return { error: error.message, values };
       }
@@ -83,7 +102,10 @@ export async function signIn(_prevState: AuthFormState, formData: FormData): Pro
    redirect(redirectTo ?? '/dashboard');
 }
 
-export async function requestPasswordReset(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+export async function requestPasswordReset(
+   _prevState: AuthFormState,
+   formData: FormData
+): Promise<AuthFormState> {
    const input = Object.fromEntries(formData);
    const values = { email: String(input.email ?? '') };
 
@@ -102,7 +124,10 @@ export async function requestPasswordReset(_prevState: AuthFormState, formData: 
    return { success: true, values };
 }
 
-export async function resetPassword(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+export async function resetPassword(
+   _prevState: AuthFormState,
+   formData: FormData
+): Promise<AuthFormState> {
    const parsed = resetPasswordSchema.safeParse(Object.fromEntries(formData));
    if (!parsed.success) {
       return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
@@ -117,7 +142,9 @@ export async function resetPassword(_prevState: AuthFormState, formData: FormDat
    } catch (error) {
       if (error instanceof APIError) {
          if (error.body?.code === 'INVALID_TOKEN') {
-            return { error: 'This reset link is invalid or has already been used. Please request a new one.' };
+            return {
+               error: 'This reset link is invalid or has already been used. Please request a new one.'
+            };
          }
          return { error: error.message };
       }

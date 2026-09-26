@@ -55,7 +55,8 @@ export function CreateWorkspaceForm() {
                   aria-invalid={!!errors?.slug}
                />
                <FieldDescription>
-                  Your workspace will live at <span className='font-medium text-foreground'>/{slug || 'your-url'}</span>
+                  Your workspace will live at{' '}
+                  <span className='font-medium text-foreground'>/{slug || 'your-url'}</span>
                </FieldDescription>
                <FieldError errors={toFieldErrors(errors?.slug)} />
             </Field>
