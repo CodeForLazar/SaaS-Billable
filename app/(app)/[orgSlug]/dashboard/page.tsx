@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { signOut } from '@/app/(auth)/actions';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,10 @@ export default async function DashboardPage({ params }: PageProps<'/[orgSlug]/da
             You&apos;re signed in as <strong className='text-foreground'>{session.user.email}</strong> and you&apos;re{' '}
             <strong className='text-foreground'>{role}</strong> of this workspace.
          </p>
+         {/* Temporary navigation until the sidebar exists (Phase 2) */}
+         <Link href={`/${organization.slug}/settings/members`} className='text-sm underline underline-offset-4'>
+            Members
+         </Link>
       </main>
    );
 }
