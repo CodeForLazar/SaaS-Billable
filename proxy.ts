@@ -11,8 +11,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 // Pages anyone may open. Everything else (workspaces, /dashboard, /create-workspace) needs a session.
 const PUBLIC_PATHS = new Set(['/', '/sign-in', '/sign-up', '/check-email', '/forgot-password', '/reset-password']);
 
+// Public pages with a variable part: the invitation page must open for people who aren't signed in yet.
+const PUBLIC_PREFIXES = ['/accept-invitation/'];
+
 export function proxy(request: NextRequest) {
-   if (PUBLIC_PATHS.has(request.nextUrl.pathname)) return NextResponse.next();
+   const { pathname } = request.nextUrl;
+   if (PUBLIC_PATHS.has(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+      return NextResponse.next();
+   }
 
    if (!getSessionCookie(request)) {
       return NextResponse.redirect(new URL('/sign-in', request.url));
