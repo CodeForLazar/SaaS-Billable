@@ -47,6 +47,7 @@ The developer knows Node.js well (builds dedicated Express-style servers) but ha
 - **Cache Components** (`cacheComponents: true` + the `'use cache'` directive) is the new caching model. We decide whether to turn it on when we get to data fetching (see the decision log).
 - Server Components are the default. Add `'use client'` only when a component needs state, effects or browser APIs.
 - Mutations go through **Server Actions**. Use **Route Handlers** (`app/**/route.ts`) only for things that need a real HTTP endpoint: the Better Auth handler, the Stripe webhook, PDF download.
+- **Errors:** *expected* errors (bad input, wrong password) are **returned** from actions and shown in the form; *unexpected* errors are **thrown** and caught by `error.tsx` boundaries. In Next 16 the boundary's "try again" is **`retry()`** (re-fetches), not `reset()`. In production, server error messages are replaced by a generic message + `digest` ID; the real error is logged via `instrumentation.ts` → `onRequestError`. Use `notFound()` for missing *or other-tenant* records.
 - Nodemailer, Prisma and Better Auth all need the **Node.js runtime**, which is the default. Never use the Edge runtime for them.
 
 ## 4. Architecture and conventions
@@ -126,6 +127,7 @@ We'll refine this (indexes, constraints, enums) in the schema step and keep this
 - **Sessions** are stored in the DB (`Session` table). The browser holds an HTTP-only cookie with the session token. Optionally we enable the cookie cache to skip the DB lookup on each request.
 - **Endpoints** are served by one catch-all route handler: `app/api/auth/[...all]/route.ts`.
 - **Schema changes** (e.g. adding a plugin): `npm run auth:generate` writes Better Auth's models into `prisma/schema/auth.prisma` (the file must exist, or the CLI creates a full standalone schema), then `npm run db:migrate -- --name <name>` creates and applies the migration. Better Auth's own `migrate` command is not used with Prisma.
+- **Migrations when `migrate dev` needs confirmation** (e.g. adding a unique constraint prints a warning and prompts): in a non-interactive shell, write the SQL with `prisma migrate diff --from-config-datasource --to-schema prisma/schema --script` into `prisma/migrations/<UTC timestamp>_<name>/migration.sql`, then run `prisma migrate deploy`.
 - **Server side:** `auth.api.getSession({ headers })` in Server Components, Server Actions and Route Handlers. This is our `req.user`.
 - **Client side:** `authClient.signIn.email()`, `signUp.email()`, `signOut()`, `useSession()`.
 - **Email/password** with verification email and password reset. Both call our `sendEmail()` (Nodemailer).
@@ -133,7 +135,8 @@ We'll refine this (indexes, constraints, enums) in the schema step and keep this
 - **No email enumeration:** sign-up with an existing email returns the same response as a new one (Better Auth behaviour when verification is required).
 - **Password reset:** `/forgot-password` → `requestPasswordReset` (same response for unknown emails) → email link `/api/auth/reset-password/<token>?callbackURL=/reset-password` → Better Auth forwards to `/reset-password?token=…` (or `?error=INVALID_TOKEN`) → `resetPassword` → `/sign-in?reset=success`. Tokens are single-use, expire after 1 h; a reset **revokes all sessions** and marks the email verified.
 - **Emails are sent in the background** via `advanced.backgroundTasks.handler` → Next's `after()`: the response doesn't wait for SMTP (no timing leak) and serverless hosts keep running until the email is sent.
-- **Organization plugin:** create a workspace on sign-up, invite members by email, roles `owner`/`admin`/`member`.
+- **Organization plugin:** create a workspace on sign-up, invite members by email, roles `owner`/`admin`/`member`. Tables: `organization` (unique `slug`), `member` (user ↔ organization + `role`, a plain string), `invitation`. The creator becomes `owner`. `session.activeOrganizationId` remembers the last-used org, but **the URL slug is the source of truth** for which org a request is about.
+- **Note:** deleting a user removes their memberships (cascade) but **not** organizations they own; handle that explicitly if we add account deletion.
 - **Demo login:** a button that signs into the seeded demo account. The demo data is reset periodically, or protected from destructive actions (decide later).
 
 ## 7. Roadmap
@@ -152,13 +155,17 @@ Each phase is split into small steps when we start it.
 - [x] Sign up / sign in / sign out pages
 - [x] Email verification
 - [x] Password reset
-- [ ] Organization creation, `[orgSlug]` routing, org switcher
+- [x] Organization plugin + migration `add_organizations` (organization, member, invitation, `session.activeOrganizationId`)
+- [ ] "Create your workspace" page (users without an organization)
+- [ ] `[orgSlug]` routing with a server-side membership check (replaces `/dashboard`)
+- [ ] Organization switcher
 - [ ] `proxy.ts` optimistic redirect + real checks in the layout/service layer
 - [ ] Invitations + roles
 
 ### Phase 2: App shell and UI
 - [x] shadcn/ui setup (done early, during Phase 1.3)
 - [ ] App layout (sidebar, header, user menu)
+- [ ] Error handling: `app/error.tsx`, `app/(app)/error.tsx` (keeps the app layout), `app/global-error.tsx`, styled `app/not-found.tsx`, `instrumentation.ts` with `onRequestError` logging. Show the error `digest` as a reference ID.
 - [ ] Landing page
 
 ### Phase 3: Clients and projects
@@ -209,6 +216,7 @@ _Update at the end of each step: what was done and what's next._
 - **2026-09-26:** Email verification: `requireEmailVerification`, `sendOnSignUp`, `sendOnSignIn`, `autoSignInAfterVerification`, 1 h expiry; emails via `after()`. New `/check-email` page; `/sign-in` shows invalid/expired-link messages. Verified end-to-end in Chrome + Mailpit (sign-up → email → unverified sign-in rejected + resent → bad link message → link signs in → dashboard; duplicate sign-up indistinguishable). **Next step:** Phase 1.4b, password reset.
 - **2026-09-26:** Password reset: `emails/reset-password.tsx`, `sendResetPassword` + `revokeSessionsOnPasswordReset` + `onPasswordReset` (marks email verified) in `lib/auth.ts`, actions `requestPasswordReset`/`resetPassword`, pages `/forgot-password` and `/reset-password`, "Forgot password?" link + success notice on `/sign-in`. Shared `newPassword` Zod rule. Verified end-to-end in Chrome + Mailpit (unknown vs known email same message, validation, reset, other device signed out, old password rejected, new works, link reuse rejected, unverified user can sign in after reset). **Next step:** Phase 1.5, organizations.
 - **2026-09-26:** Split the Prisma schema into `prisma/schema/` (`schema.prisma` = generator + datasource, `auth.prisma` = Better Auth models). `prisma.config.ts` points at the folder; `auth:generate` writes to `auth.prisma` via `--output`. Verified: schema valid, client generated to the same path, `migrate diff` against the DB is empty, `auth:generate` reports up to date, and a dry run with the organization plugin adds its models to a copy of `auth.prisma` without adding a generator/datasource. **Next step:** Phase 1.5, organizations.
+- **2026-09-26:** Organization plugin added with defaults (`organization()` before `nextCookies()`); `auth:generate` added Organization/Member/Invitation to `auth.prisma`; migration `add_organizations` applied. Verified via API: create org → creator is `owner`, duplicate slug rejected, `check-slug` works, new org becomes the session's active org. Added `@@unique([organizationId, userId])` on `Member` (migration `member_unique_per_organization`); verified the CLI preserves it on rewrite and the DB rejects duplicate memberships. **Next step:** Phase 1.5 step 2, "Create your workspace" page.
 
 ## 9. Decision log
 
@@ -238,6 +246,8 @@ _Update at the end of each step: what was done and what's next._
 | 2026-09-26 | Type env vars with a hand-written **`env.d.ts`** (`NodeJS.ProcessEnv`), not `experimental.typedEnv` | `typedEnv` is experimental and generates types from the local `.env` only (nothing on a fresh clone/CI). `env.d.ts` is stable, committed, and documents the vars. |
 | 2026-09-26 | Password reset **revokes all sessions** and **marks the email verified** | Reset is often done after a compromise; using the emailed link proves inbox ownership, so no second confirmation email |
 | 2026-09-26 | **Multi-file Prisma schema** (`prisma/schema/`), one file per domain | Developer's preference; easier to navigate. Better Auth's CLI can only write one file, so all its models share `auth.prisma`. Runtime schema check uses the generated client, not the files, so it's unaffected. |
+| 2026-09-26 | **`@@unique([organizationId, userId])` on `Member`** (hand-added in `auth.prisma`) | Better Auth only prevents duplicate memberships in code; now the database guarantees it. Verified the CLI keeps hand-added attributes when it rewrites the file. |
 | _open_ | Enable Cache Components? | Decide in Phase 3 when we fetch data |
 | _open_ | PDF library | Decide in Phase 5 |
 | _open_ | Demo account protection strategy | Decide in Phase 8 |
+| _open_ | React Hook Form for complex forms? | Proposal: keep `useActionState` for simple forms; use RHF (+ `zodResolver`, same Zod schemas, server still validates) for the invoice editor (`useFieldArray`, live totals). Decide in Phase 5. |
