@@ -97,6 +97,8 @@ model Member {
   role           String       @default("member")
   createdAt      DateTime
 
+  // Added by us: a user can be a member of an organization only once (Better Auth only checks this in code).
+  @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
   @@map("member")
