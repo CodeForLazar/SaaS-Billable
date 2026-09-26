@@ -12,6 +12,13 @@ import VerifyEmail from '@/emails/verify-email';
 // BETTER_AUTH_SECRET and BETTER_AUTH_URL are read from the environment automatically.
 export const auth = betterAuth({
    database: prismaAdapter(db, { provider: 'postgresql' }),
+   user: {
+      additionalFields: {
+         // The workspace the user was last in, so sign-in can take them back to it.
+         // Set by the server (app/(app)/[orgSlug]/layout.tsx); input: false means clients can't set it.
+         lastActiveOrganizationId: { type: 'string', required: false, input: false }
+      }
+   },
    emailAndPassword: {
       enabled: true,
       // No session until the email is confirmed. Sign-in with an unverified email is rejected.

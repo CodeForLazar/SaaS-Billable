@@ -8,6 +8,6 @@ export default async function DashboardRedirectPage() {
    const session = await getSession();
    if (!session) redirect('/sign-in');
 
-   const slug = await getHomeWorkspaceSlug(session.user.id, session.session.activeOrganizationId);
+   const slug = await getHomeWorkspaceSlug(session.user.id, session.user.lastActiveOrganizationId);
    redirect(slug ? `/${slug}/dashboard` : '/create-workspace');
 }

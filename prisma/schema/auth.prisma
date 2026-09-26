@@ -20,6 +20,8 @@ model User {
   members     Member[]
   invitations Invitation[]
 
+  lastActiveOrganizationId String?
+
   @@unique([email])
   @@map("user")
 }

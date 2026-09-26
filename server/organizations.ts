@@ -39,11 +39,16 @@ export const listMemberships = cache(async (userId: string) => {
 
 /**
  * Where to send a signed-in user who didn't ask for a specific workspace (e.g. right after
- * sign-in): the workspace they used last (session.activeOrganizationId), else their first one,
+ * sign-in): the workspace they were last in, if they're still a member, else their first one,
  * else null (they have none yet).
  */
-export async function getHomeWorkspaceSlug(userId: string, activeOrganizationId?: string | null) {
+export async function getHomeWorkspaceSlug(userId: string, lastActiveOrganizationId?: string | null) {
    const memberships = await listMemberships(userId);
-   const active = memberships.find((m) => m.organization.id === activeOrganizationId);
-   return (active ?? memberships[0])?.organization.slug ?? null;
+   const last = memberships.find((m) => m.organization.id === lastActiveOrganizationId);
+   return (last ?? memberships[0])?.organization.slug ?? null;
+}
+
+/** Remember the workspace the user is in, so the next sign-in returns to it. */
+export async function rememberActiveWorkspace(userId: string, organizationId: string) {
+   await db.user.update({ where: { id: userId }, data: { lastActiveOrganizationId: organizationId } });
 }
