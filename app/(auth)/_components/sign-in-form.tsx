@@ -9,22 +9,24 @@ import { Input } from '@/components/ui/input';
 import { signIn } from '../actions';
 import { toFieldErrors } from './to-field-errors';
 
-export function SignInForm() {
+// redirectTo: where to go after signing in (e.g. back to an invitation). defaultEmail pre-fills the field.
+export function SignInForm({ redirectTo, defaultEmail }: { redirectTo?: string | null; defaultEmail?: string }) {
    const [state, formAction, pending] = useActionState(signIn, undefined);
    const errors = state?.fieldErrors;
 
    return (
       <form action={formAction} noValidate>
+         {redirectTo && <input type='hidden' name='redirectTo' value={redirectTo} />}
          <FieldGroup>
             <Field data-invalid={!!errors?.email}>
                <FieldLabel htmlFor='email'>Email</FieldLabel>
                <Input
-                  key={state?.values?.email}
+                  key={state?.values?.email ?? defaultEmail}
                   id='email'
                   name='email'
                   type='email'
                   autoComplete='email'
-                  defaultValue={state?.values?.email}
+                  defaultValue={state?.values?.email ?? defaultEmail}
                   aria-invalid={!!errors?.email}
                />
                <FieldError errors={toFieldErrors(errors?.email)} />

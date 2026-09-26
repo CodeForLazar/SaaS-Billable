@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { signUp } from '../actions';
 import { toFieldErrors } from './to-field-errors';
 
-export function SignUpForm() {
+// redirectTo: where to go after signing in (e.g. back to an invitation). defaultEmail pre-fills the field.
+export function SignUpForm({ redirectTo, defaultEmail }: { redirectTo?: string | null; defaultEmail?: string }) {
    // state = whatever signUp() returned last time; pending = true while it runs on the server
    const [state, formAction, pending] = useActionState(signUp, undefined);
    const errors = state?.fieldErrors;
@@ -17,6 +18,7 @@ export function SignUpForm() {
 
    return (
       <form action={formAction} noValidate>
+         {redirectTo && <input type='hidden' name='redirectTo' value={redirectTo} />}
          <FieldGroup>
             <Field data-invalid={!!errors?.name}>
                <FieldLabel htmlFor='name'>Name</FieldLabel>
@@ -34,12 +36,12 @@ export function SignUpForm() {
             <Field data-invalid={!!errors?.email}>
                <FieldLabel htmlFor='email'>Email</FieldLabel>
                <Input
-                  key={state?.values?.email}
+                  key={state?.values?.email ?? defaultEmail}
                   id='email'
                   name='email'
                   type='email'
                   autoComplete='email'
-                  defaultValue={state?.values?.email}
+                  defaultValue={state?.values?.email ?? defaultEmail}
                   aria-invalid={!!errors?.email}
                />
                <FieldError errors={toFieldErrors(errors?.email)} />

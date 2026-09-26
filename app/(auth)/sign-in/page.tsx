@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { authHref, safeRedirectPath } from '@/lib/safe-redirect';
 import { getSession } from '@/lib/session';
 import { SignInForm } from '../_components/sign-in-form';
 
@@ -15,10 +16,14 @@ const linkErrors: Record<string, string> = {
 };
 
 export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>) {
-   // Signed in (including right after clicking a valid confirmation link)? Go to the app.
-   if (await getSession()) redirect('/dashboard');
+   const { error, reset, redirectTo: rawRedirectTo, email } = await searchParams;
+   const redirectTo = safeRedirectPath(rawRedirectTo);
+   const defaultEmail = typeof email === 'string' ? email : undefined;
 
-   const { error, reset } = await searchParams;
+   // Signed in (including right after clicking a valid confirmation link)? Continue where they
+   // were going (e.g. an invitation), otherwise to their workspace.
+   if (await getSession()) redirect(redirectTo ?? '/dashboard');
+
    const linkError = typeof error === 'string' ? (linkErrors[error] ?? 'Something went wrong. Please try again.') : null;
 
    return (
@@ -38,11 +43,11 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
                   <AlertDescription>{linkError}</AlertDescription>
                </Alert>
             )}
-            <SignInForm />
+            <SignInForm redirectTo={redirectTo} defaultEmail={defaultEmail} />
          </CardContent>
          <CardFooter className='justify-center text-sm text-muted-foreground'>
             Don&apos;t have an account?&nbsp;
-            <Link href='/sign-up' className='font-medium text-foreground underline underline-offset-4'>
+            <Link href={authHref('/sign-up', { redirectTo, email: defaultEmail })} className='font-medium text-foreground underline underline-offset-4'>
                Sign up
             </Link>
          </CardFooter>

@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
+import { safeRedirectPath } from '@/lib/safe-redirect';
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from '@/lib/validations/auth';
 
 // What a form action sends back to the form: a general error, per-field errors, the values the
@@ -19,9 +20,17 @@ export type AuthFormState =
      }
    | undefined;
 
+// Where the email-confirmation link lands. /sign-in forwards signed-in users on to redirectTo
+// (or their workspace) and shows a message if the link was invalid or expired.
+function confirmationCallbackURL(redirectTo: string | null) {
+   return redirectTo ? `/sign-in?redirectTo=${encodeURIComponent(redirectTo)}` : '/sign-in';
+}
+
 export async function signUp(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
    const input = Object.fromEntries(formData);
    const values = { name: String(input.name ?? ''), email: String(input.email ?? '') };
+   // Checked again here: the hidden field comes from the browser.
+   const redirectTo = safeRedirectPath(input.redirectTo);
 
    const parsed = signUpSchema.safeParse(input);
    if (!parsed.success) {
@@ -32,7 +41,10 @@ export async function signUp(_prevState: AuthFormState, formData: FormData): Pro
       // Creates the user and emails a verification link. No session yet: that happens when the link
       // is clicked. The link lands on callbackURL (/sign-in forwards signed-in users to the app).
       // An already-registered email gets the same response, so this form can't reveal who has an account.
-      await auth.api.signUpEmail({ body: { ...parsed.data, callbackURL: '/sign-in' }, headers: await headers() });
+      await auth.api.signUpEmail({
+         body: { ...parsed.data, callbackURL: confirmationCallbackURL(redirectTo) },
+         headers: await headers()
+      });
    } catch (error) {
       if (error instanceof APIError) return { error: error.message, values };
       throw error;
@@ -45,6 +57,7 @@ export async function signUp(_prevState: AuthFormState, formData: FormData): Pro
 export async function signIn(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
    const input = Object.fromEntries(formData);
    const values = { email: String(input.email ?? '') };
+   const redirectTo = safeRedirectPath(input.redirectTo);
 
    const parsed = signInSchema.safeParse(input);
    if (!parsed.success) {
@@ -52,7 +65,10 @@ export async function signIn(_prevState: AuthFormState, formData: FormData): Pro
    }
 
    try {
-      await auth.api.signInEmail({ body: { ...parsed.data, callbackURL: '/sign-in' }, headers: await headers() });
+      await auth.api.signInEmail({
+         body: { ...parsed.data, callbackURL: confirmationCallbackURL(redirectTo) },
+         headers: await headers()
+      });
    } catch (error) {
       if (error instanceof APIError) {
          // Better Auth has just emailed a fresh verification link (sendOnSignIn).
@@ -64,7 +80,7 @@ export async function signIn(_prevState: AuthFormState, formData: FormData): Pro
       throw error;
    }
 
-   redirect('/dashboard');
+   redirect(redirectTo ?? '/dashboard');
 }
 
 export async function requestPasswordReset(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
