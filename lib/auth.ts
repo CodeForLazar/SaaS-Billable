@@ -6,6 +6,7 @@ import { after } from 'next/server';
 import { createElement } from 'react';
 import { db } from '@/lib/db';
 import { sendEmail } from '@/lib/mailer';
+import InvitationEmail from '@/emails/invitation';
 import ResetPasswordEmail from '@/emails/reset-password';
 import VerifyEmail from '@/emails/verify-email';
 
@@ -64,7 +65,21 @@ export const auth = betterAuth({
    plugins: [
       // Workspaces (tenants): organizations, their members + roles, invitations.
       // The user who creates an organization becomes its "owner".
-      organization(),
+      organization({
+         // Invitations expire after 48 hours (the default). The link opens our accept page.
+         sendInvitationEmail: async ({ id, email, role, organization, inviter }) => {
+            await sendEmail({
+               to: email,
+               subject: `${inviter.user.name} invited you to ${organization.name}`,
+               react: createElement(InvitationEmail, {
+                  inviterName: inviter.user.name,
+                  organizationName: organization.name,
+                  role,
+                  url: `${process.env.BETTER_AUTH_URL}/accept-invitation/${id}`
+               })
+            });
+         }
+      }),
       // nextCookies lets server actions set the session cookie. It must stay last in the list.
       nextCookies()
    ]

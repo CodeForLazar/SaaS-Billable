@@ -1,11 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+   Table,
+   TableBody,
+   TableCell,
+   TableHead,
+   TableHeader,
+   TableRow
+} from '@/components/ui/table';
 import { getMembersOverview } from '@/server/members';
 import { requireMembership } from '@/server/organizations';
+import { inviteMemberAction } from './actions';
+import { InviteForm } from './invite-form';
 
-export async function generateMetadata({ params }: PageProps<'/[orgSlug]/settings/members'>): Promise<Metadata> {
+export async function generateMetadata({
+   params
+}: PageProps<'/[orgSlug]/settings/members'>): Promise<Metadata> {
    const { organization } = await requireMembership((await params).orgSlug);
    return { title: `Members · ${organization.name}` };
 }
@@ -13,7 +25,8 @@ export async function generateMetadata({ params }: PageProps<'/[orgSlug]/setting
 const roleBadge = { owner: 'default', admin: 'secondary', member: 'outline' } as const;
 
 // A server component renders the date, so there's no server/browser timezone mismatch.
-const formatDate = (date: Date) => new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(date);
+const formatDate = (date: Date) =>
+   new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(date);
 
 export default async function MembersPage({ params }: PageProps<'/[orgSlug]/settings/members'>) {
    const { orgSlug } = await params;
@@ -22,7 +35,10 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
    return (
       <main className='mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 py-16'>
          <div>
-            <Link href={`/${organization.slug}/dashboard`} className='text-sm text-muted-foreground hover:underline'>
+            <Link
+               href={`/${organization.slug}/dashboard`}
+               className='text-sm text-muted-foreground hover:underline'
+            >
                ← {organization.name}
             </Link>
             <h1 className='mt-2 text-2xl font-semibold'>Members</h1>
@@ -45,26 +61,50 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                      <TableRow key={member.id}>
                         <TableCell className='font-medium'>
                            {member.user.name}
-                           {member.user.id === currentUserId && <span className='text-muted-foreground'> (you)</span>}
+                           {member.user.id === currentUserId && (
+                              <span className='text-muted-foreground'> (you)</span>
+                           )}
                         </TableCell>
                         <TableCell className='text-muted-foreground'>{member.user.email}</TableCell>
                         <TableCell>
                            <div className='flex gap-1'>
                               {member.role.split(',').map((role) => (
-                                 <Badge key={role} variant={roleBadge[role.trim() as keyof typeof roleBadge] ?? 'outline'}>
+                                 <Badge
+                                    key={role}
+                                    variant={
+                                       roleBadge[role.trim() as keyof typeof roleBadge] ?? 'outline'
+                                    }
+                                 >
                                     {role.trim()}
                                  </Badge>
                               ))}
                            </div>
                         </TableCell>
-                        <TableCell className='text-right text-muted-foreground'>{formatDate(member.createdAt)}</TableCell>
+                        <TableCell className='text-right text-muted-foreground'>
+                           {formatDate(member.createdAt)}
+                        </TableCell>
                      </TableRow>
                   ))}
                </TableBody>
             </Table>
          </section>
 
-         {/* null = this role may not manage invitations, so the section isn't shown at all */}
+         {/* null = this role may not manage invitations, so neither the form nor the list is shown */}
+         {invitations && (
+            <Card>
+               <CardHeader>
+                  <CardTitle>Invite a teammate</CardTitle>
+                  <CardDescription>
+                     They&apos;ll get an email with a link to join. Invitations expire after 48
+                     hours.
+                  </CardDescription>
+               </CardHeader>
+               <CardContent>
+                  <InviteForm action={inviteMemberAction.bind(null, organization.slug)} />
+               </CardContent>
+            </Card>
+         )}
+
          {invitations && (
             <section className='flex flex-col gap-3'>
                <h2 className='font-medium'>Pending invitations ({invitations.length})</h2>
@@ -87,7 +127,9 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                               <TableCell>
                                  <Badge variant='outline'>{invitation.role ?? 'member'}</Badge>
                               </TableCell>
-                              <TableCell className='text-muted-foreground'>{invitation.user.name}</TableCell>
+                              <TableCell className='text-muted-foreground'>
+                                 {invitation.user.name}
+                              </TableCell>
                               <TableCell className='text-right text-muted-foreground'>
                                  {formatDate(invitation.expiresAt)}
                               </TableCell>

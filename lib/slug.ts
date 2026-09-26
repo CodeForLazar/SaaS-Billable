@@ -11,6 +11,7 @@ export const RESERVED_SLUGS = new Set([
    'forgot-password',
    'reset-password',
    'create-workspace',
+   'accept-invitation',
    // planned or likely routes
    'i',
    'invite',

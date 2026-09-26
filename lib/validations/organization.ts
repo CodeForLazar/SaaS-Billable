@@ -15,3 +15,12 @@ export const createWorkspaceSchema = z.object({
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and single dashes')
       .refine((slug) => !RESERVED_SLUGS.has(slug), 'This URL is reserved. Please choose another one.')
 });
+
+// Roles that can be given through an invitation. Making someone an owner is a separate,
+// owner-only action (see "manage members").
+export const INVITABLE_ROLES = ['member', 'admin'] as const;
+
+export const inviteMemberSchema = z.object({
+   email: z.email('Enter a valid email address'),
+   role: z.enum(INVITABLE_ROLES, 'Choose a role')
+});
