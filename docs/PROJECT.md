@@ -124,12 +124,14 @@ Our own models (all carry `organizationId`):
 | Model | Key fields |
 |---|---|
 | **Organization** (extended) | `currency`, `defaultHourlyRate`, invoice numbering prefix/counter, business details for invoices |
-| **Client** | `name`, `email`, `company`, `address`, `notes`, `archivedAt` |
-| **Project** | `clientId`, `name`, `hourlyRate` (cents, overrides org default), `status` (active/archived), `color` |
+| **Client** ✅ | `name`, `email?`, `company?`, `address?`, `notes?`, `archivedAt?` (archive, don't delete); `@@unique([id, organizationId])` for the composite FK |
+| **Project** ✅ | `clientId`, `name`, `hourlyRateCents?`, `color?`, `archivedAt?` (instead of a status enum, same as clients). **Composite FK** `(clientId, organizationId)` → `Client(id, organizationId)`: the DB guarantees a project's client is in the same workspace. `onDelete: Restrict` on the client. |
 | **TimeEntry** | `projectId`, `userId`, `description`, `startedAt`, `endedAt?` (null = timer running), `durationSec`, `billable`, `invoiceLineId?` |
 | **Invoice** | `clientId`, `number`, `status` (DRAFT/SENT/PAID/OVERDUE/VOID), `issueDate`, `dueDate`, `subtotal`, `tax`, `total` (cents), `publicToken`, `paidAt?` |
 | **InvoiceLine** | `invoiceId`, `description`, `quantity`, `unitPrice`, `amount` (cents) |
 | **Payment** | `invoiceId`, `amount`, `stripeSessionId`, `status`, `paidAt` |
+
+IDs of our own models: `@default(cuid(2))`. Reverse relations on `Organization` (`clients`, `projects`) are hand-added in `auth.prisma` (verified the Better Auth CLI keeps them when it rewrites the file).
 
 Relationships: Organization → Clients → Projects → TimeEntries. Invoice → InvoiceLines ← TimeEntries (once billed). Invoice → Payments.
 
@@ -198,7 +200,10 @@ Each phase is split into small steps when we start it.
 - [x] Landing page (`app/(marketing)/`): header, hero, feature cards, footer; site name in `lib/site.ts`
 
 ### Phase 3: Clients and projects
-- [ ] Clients CRUD (list with search/pagination, create/edit, archive)
+- [x] Data model: `Client` + `Project` (`client.prisma`, `project.prisma`), migration `add_clients_and_projects`
+- [ ] Clients list (search, pagination) + sidebar entry + workspace `not-found.tsx`
+- [ ] Create / edit client
+- [ ] Archive / restore client
 - [ ] Projects CRUD (linked to client, rate, status)
 
 ### Phase 4: Time tracking
@@ -259,6 +264,7 @@ _Update at the end of each step: what was done and what's next._
 - **2026-09-27:** Landing page: `app/page.tsx` moved to `app/(marketing)/page.tsx` (hero, 6 feature cards) + `(marketing)/layout.tsx` (session-aware header, footer); `lib/site.ts` (name "Billable", tagline, description); root metadata uses a title template; create-next-app SVGs removed from `public/`. Verified in Chrome: CTAs lead to sign-up/sign-in, signed-in header shows "Go to dashboard", titles ("Sign in · Billable", "Dashboard · <workspace> · Billable", "Page not found · Billable"), no horizontal overflow at 390px. **Phase 2 complete.** **Next step:** Phase 3, clients and projects.
 - **2026-09-27:** Emerald color theme (developer's choice): new `:root` and `.dark` variables in `globals.css` from Tailwind's emerald scale, grays with a faint green tint; email buttons emerald-700. Contrast of every text/background pair calculated (all ≥ 4.5:1, WCAG AA). Checked landing, sign-in, members page (buttons, active nav, badges, focus ring) and the invitation email. **Next step:** Phase 3, clients and projects.
 - **2026-09-27:** Mobile fix on the members page (reported by the developer): the invite form's Role field is now shadcn `Select` instead of a native `<select>` (native popup opened far from the field in DevTools' mobile view); tables hide secondary columns on phones (email under the name), because a sideways-scrolling table pushed the ⋯ menu off-screen. `native-select` component removed (unused). Verified at 390px: no sideways scroll, ⋯ visible and its menu on screen, Role list opens under the field, picking Admin creates an admin invitation, role kept after a validation error; desktop keeps all columns; keyboard works. **Next step:** Phase 3, clients and projects.
+- **2026-09-27:** Phase 3 step 1, data model: `prisma/schema/client.prisma` and `project.prisma` (cuid2 ids, archive via `archivedAt`, money in `hourlyRateCents`, indexes for per-workspace queries, composite FK project→client within the workspace, `Restrict` on client delete), reverse relations on `Organization`, migration `add_clients_and_projects`. Verified: CLI rewrite keeps the hand-added relations; SQL tests: cross-workspace project rejected, deleting a client with projects rejected, deleting a workspace cascades. Decision: Cache Components stays off. **Next step:** Phase 3 step 2, clients list.
 
 ## 9. Decision log
 
@@ -296,7 +302,8 @@ _Update at the end of each step: what was done and what's next._
 | 2026-09-27 | shadcn **sidebar** for the app shell | Collapsible to icons, mobile drawer, keyboard shortcut and remembered state out of the box; standard SaaS look |
 | 2026-09-27 | Working product name **"Billable"** in `lib/site.ts` | The landing page and titles need a name; one constant makes renaming trivial |
 | 2026-09-27 | **Emerald** theme, buttons on emerald-700 | Developer's pick from 4 options: fits a "get paid" product and stands out from blue SaaS apps; emerald-700 because white on emerald-600 fails WCAG AA |
-| _open_ | Enable Cache Components? | Decide in Phase 3 when we fetch data |
+| 2026-09-27 | **Cache Components stays off** | Nearly every page is per-user and per-workspace (reads the session cookie) and must be fresh; enabling it would mean Suspense boundaries around every session read for little gain, and more room for stale-data bugs in a multi-tenant app. Opt-in flag; can be revisited for public pages. |
+| 2026-09-27 | **Composite foreign key** for tenant-owned relations (e.g. `Project(clientId, organizationId)` → `Client(id, organizationId)`) | The database, not just our code, guarantees related records belong to the same workspace (verified: cross-tenant insert rejected) |
 | _open_ | PDF library | Decide in Phase 5 |
 | _open_ | Demo account protection strategy | Decide in Phase 8 |
 | _open_ | React Hook Form for complex forms? | Proposal: keep `useActionState` for simple forms; use RHF (+ `zodResolver`, same Zod schemas, server still validates) for the invoice editor (`useFieldArray`, live totals). Decide in Phase 5. |
