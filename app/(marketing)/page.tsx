@@ -12,7 +12,7 @@ import { DemoButton } from '@/components/demo-button';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSession } from '@/lib/session';
-import { site } from '@/lib/site';
+import { site } from '@/utils/site';
 import { cn } from '@/lib/utils';
 
 // The public landing page at "/". "Try the demo" is the main call to action: reviewers get a

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RESERVED_SLUGS, SLUG_MAX_LENGTH } from '@/lib/slug';
+import { RESERVED_SLUGS, SLUG_MAX_LENGTH } from '@/utils/slug';
 
 export const createWorkspaceSchema = z.object({
    name: z

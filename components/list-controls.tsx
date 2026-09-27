@@ -5,7 +5,7 @@ import { LinkTabs } from '@/components/link-tabs';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { type ListQuery, listHref } from '@/lib/validations/list';
+import { type ListQuery, listHref } from '@/validations/list';
 
 // Building blocks for list pages (clients, projects, ...). All Server Components: they only
 // render links and a GET form, and the list's state lives in the URL.

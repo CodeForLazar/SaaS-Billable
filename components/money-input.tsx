@@ -4,11 +4,11 @@ import {
    InputGroupInput,
    InputGroupText
 } from '@/components/ui/input-group';
-import { currencySymbol } from '@/lib/money';
+import { currencySymbol } from '@/utils/money';
 
 // A text field for an amount ("75.50") with the currency symbol in front ($, €, CHF...). An
 // input group, so a long symbol gets the room it needs. Text, not type="number": number inputs
-// accept "1e3", change on scroll, and we parse the text exactly anyway (lib/money.ts).
+// accept "1e3", change on scroll, and we parse the text exactly anyway (utils/money.ts).
 export function MoneyInput({
    currency,
    suffix,

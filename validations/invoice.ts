@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { MONEY_PATTERN, inputToCents } from '@/lib/money';
-import { optionalText, percentToBasisPoints, wholeNumber } from '@/lib/validations/common';
+import { MONEY_PATTERN, inputToCents } from '@/utils/money';
+import { optionalText, percentToBasisPoints, wholeNumber } from '@/validations/common';
 
 const id = z.string().trim().min(1).max(100);
 

@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { inviteMemberSchema } from '@/lib/validations/organization';
+import { inviteMemberSchema } from '@/validations/organization';
 import {
    type MemberActionResult,
    cancelInvitation,

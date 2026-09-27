@@ -18,7 +18,7 @@ import {
 import { dayKey, formatDayRange, formatDuration, formatIn } from '@/lib/format';
 import { getTimeZone, requestNow } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
-import { weekQuerySchema } from '@/lib/validations/time-entry';
+import { weekQuerySchema } from '@/validations/time-entry';
 import { requireMembership } from '@/server/organizations';
 import { listMyEntriesBetween } from '@/server/time-entries';
 import { TimeTabs } from '../time-tabs';

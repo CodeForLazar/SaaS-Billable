@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { CURRENCY_CODES } from '@/lib/money';
+import { CURRENCY_CODES } from '@/utils/money';
 import {
    optionalEmail,
    optionalText,
    percentToBasisPoints,
    wholeNumber
-} from '@/lib/validations/common';
+} from '@/validations/common';
 
 // The billing settings form (Settings > Billing).
 export const billingSettingsSchema = z.object({

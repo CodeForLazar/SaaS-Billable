@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { buttonVariants } from '@/components/ui/button';
 import { can } from '@/lib/permissions';
-import { DEFAULT_PROJECT_COLOR } from '@/lib/project-colors';
+import { DEFAULT_PROJECT_COLOR } from '@/utils/project-colors';
 import { cn } from '@/lib/utils';
 import { listClientOptions } from '@/server/clients';
 import { requireMembership } from '@/server/organizations';

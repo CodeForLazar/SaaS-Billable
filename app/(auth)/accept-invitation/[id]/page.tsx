@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { authHref } from '@/lib/safe-redirect';
+import { authHref } from '@/utils/safe-redirect';
 import { getSession } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import { getOpenInvitation } from '@/server/invitations';

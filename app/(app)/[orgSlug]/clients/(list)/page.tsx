@@ -15,7 +15,7 @@ import { formatDate } from '@/lib/format';
 import { can } from '@/lib/permissions';
 import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
-import { listHref, listQuerySchema } from '@/lib/validations/list';
+import { listHref, listQuerySchema } from '@/validations/list';
 import { listClients } from '@/server/clients';
 import { requireMembership } from '@/server/organizations';
 

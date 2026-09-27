@@ -2,9 +2,9 @@ import 'server-only';
 import path from 'node:path';
 import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
 import { formatDate } from '@/lib/format';
-import { DATE_ONLY_ZONE, STATUS_LABELS } from '@/lib/invoice-status';
-import type { InvoiceView } from '@/lib/invoice-view';
-import { basisPointsToPercent, centsToInput, formatMoney } from '@/lib/money';
+import { DATE_ONLY_ZONE, STATUS_LABELS } from '@/utils/invoice-status';
+import type { InvoiceView } from '@/utils/invoice-view';
+import { basisPointsToPercent, centsToInput, formatMoney } from '@/utils/money';
 
 // The invoice as a PDF, built with @react-pdf/renderer: React components (<Page>, <View>,
 // <Text>) laid out with a subset of CSS (flexbox), rendered to a file on the server. The same

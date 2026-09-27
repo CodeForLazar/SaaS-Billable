@@ -8,7 +8,7 @@ import {
    createInvoiceSchema,
    invoiceDetailsSchema,
    invoiceLineSchema
-} from '@/lib/validations/invoice';
+} from '@/validations/invoice';
 import {
    type InvoiceResult,
    addInvoiceLine,

@@ -1,9 +1,9 @@
 import 'server-only';
 import { cache } from 'react';
 import { db } from '@/lib/db';
-import { DEFAULT_CURRENCY } from '@/lib/money';
+import { DEFAULT_CURRENCY } from '@/utils/money';
 import { can } from '@/lib/permissions';
-import type { BillingSettingsInput } from '@/lib/validations/settings';
+import type { BillingSettingsInput } from '@/validations/settings';
 import { requireMembership } from '@/server/organizations';
 
 // Values used until a workspace saves its billing settings (there's no row before that).

@@ -2,7 +2,7 @@
 
 import { refresh } from 'next/cache';
 import { z } from 'zod';
-import { billingSettingsSchema } from '@/lib/validations/settings';
+import { billingSettingsSchema } from '@/validations/settings';
 import { updateWorkspaceSettings } from '@/server/settings';
 
 const FIELDS = [

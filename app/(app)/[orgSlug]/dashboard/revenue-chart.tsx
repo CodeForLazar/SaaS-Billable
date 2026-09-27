@@ -7,7 +7,7 @@ import {
    ChartTooltip,
    ChartTooltipContent
 } from '@/components/ui/chart';
-import { formatMoney } from '@/lib/money';
+import { formatMoney } from '@/utils/money';
 
 export type RevenueMonth = {
    key: string; // "2026-09", unique per month

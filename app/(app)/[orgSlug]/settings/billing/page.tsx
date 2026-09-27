@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { basisPointsToPercent } from '@/lib/money';
+import { basisPointsToPercent } from '@/utils/money';
 import { can } from '@/lib/permissions';
 import { requireMembership } from '@/server/organizations';
 import { getWorkspaceSettings } from '@/server/settings';

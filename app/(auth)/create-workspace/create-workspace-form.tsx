@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { slugify } from '@/lib/slug';
+import { slugify } from '@/utils/slug';
 import { toFieldErrors } from '../_components/to-field-errors';
 import { createWorkspace } from './actions';
 

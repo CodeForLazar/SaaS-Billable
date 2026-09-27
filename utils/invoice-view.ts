@@ -1,4 +1,4 @@
-import { type DisplayStatus, displayStatus } from '@/lib/invoice-status';
+import { type DisplayStatus, displayStatus } from '@/utils/invoice-status';
 
 // What an invoice shows, in one shape for the app page, the public page and the PDF. A draft
 // shows the business's and the client's CURRENT details; a sent invoice shows the snapshot taken

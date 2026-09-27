@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { centsToInput } from '@/lib/money';
+import { centsToInput } from '@/utils/money';
 import { can } from '@/lib/permissions';
-import { DEFAULT_PROJECT_COLOR } from '@/lib/project-colors';
+import { DEFAULT_PROJECT_COLOR } from '@/utils/project-colors';
 import { listClientOptions } from '@/server/clients';
 import { getWorkspaceSettings } from '@/server/settings';
 import { getProject } from '@/server/projects';

@@ -29,7 +29,7 @@ import {
    SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CURRENCIES } from '@/lib/money';
+import { CURRENCIES } from '@/utils/money';
 import type { BillingFormState, BillingValues } from './actions';
 
 type BillingAction = (state: BillingFormState, formData: FormData) => Promise<BillingFormState>;

@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
-import { createWorkspaceSchema } from '@/lib/validations/organization';
+import { createWorkspaceSchema } from '@/validations/organization';
 
 export type CreateWorkspaceState =
    | {

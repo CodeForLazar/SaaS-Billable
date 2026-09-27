@@ -18,7 +18,7 @@ import {
    TableRow
 } from '@/components/ui/table';
 import { formatDuration, formatIn } from '@/lib/format';
-import { formatMoney } from '@/lib/money';
+import { formatMoney } from '@/utils/money';
 import { getTimeZone } from '@/lib/time-zone';
 import { getDashboard } from '@/server/dashboard';
 import { requireMembership } from '@/server/organizations';

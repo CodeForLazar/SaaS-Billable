@@ -3,7 +3,7 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { authHref } from '@/lib/safe-redirect';
+import { authHref } from '@/utils/safe-redirect';
 import { acceptInvitation, declineInvitation, getOpenInvitation } from '@/server/invitations';
 
 export type InvitationActionState = { error?: string } | undefined;

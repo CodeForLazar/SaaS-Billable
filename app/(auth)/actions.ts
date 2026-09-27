@@ -5,13 +5,13 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
-import { safeRedirectPath } from '@/lib/safe-redirect';
+import { safeRedirectPath } from '@/utils/safe-redirect';
 import {
    forgotPasswordSchema,
    resetPasswordSchema,
    signInSchema,
    signUpSchema
-} from '@/lib/validations/auth';
+} from '@/validations/auth';
 
 // What a form action sends back to the form: a general error, per-field errors, the values the
 // user typed (React resets the form after an action, so we refill it), and a success flag for

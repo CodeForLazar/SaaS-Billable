@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { optionalEmail, optionalText } from '@/lib/validations/common';
+import { optionalEmail, optionalText } from '@/validations/common';
 
 // The create and edit forms. Also used on the server, so a request that skips the form is
 // checked by the same rules.

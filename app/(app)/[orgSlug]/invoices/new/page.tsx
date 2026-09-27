@@ -12,7 +12,7 @@ import {
    SelectValue
 } from '@/components/ui/select';
 import { formatDayRange } from '@/lib/format';
-import { centsToInput, formatMoney } from '@/lib/money';
+import { centsToInput, formatMoney } from '@/utils/money';
 import { can } from '@/lib/permissions';
 import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';

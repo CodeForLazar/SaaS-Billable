@@ -23,7 +23,7 @@ import {
    SelectTrigger,
    SelectValue
 } from '@/components/ui/select';
-import { PROJECT_COLORS } from '@/lib/project-colors';
+import { PROJECT_COLORS } from '@/utils/project-colors';
 import { cn } from '@/lib/utils';
 import type { ProjectFormState, ProjectValues } from './actions';
 

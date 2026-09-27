@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { clientSchema } from '@/lib/validations/client';
+import { clientSchema } from '@/validations/client';
 import { type ClientResult, createClient, setClientArchived, updateClient } from '@/server/clients';
 
 const FIELDS = ['name', 'company', 'email', 'address', 'notes'] as const;

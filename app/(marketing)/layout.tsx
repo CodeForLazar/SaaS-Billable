@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Timer } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
-import { site } from '@/lib/site';
+import { site } from '@/utils/site';
 import { getSession } from '@/lib/session';
 import { cn } from '@/lib/utils';
 

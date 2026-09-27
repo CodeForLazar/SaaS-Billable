@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { MONEY_PATTERN, inputToCents } from '@/lib/money';
-import { PROJECT_COLOR_VALUES } from '@/lib/project-colors';
+import { MONEY_PATTERN, inputToCents } from '@/utils/money';
+import { PROJECT_COLOR_VALUES } from '@/utils/project-colors';
 
 // The create and edit forms, also checked on the server. The rate arrives as text ("75.50") and
 // leaves as cents (7550), or null when empty.

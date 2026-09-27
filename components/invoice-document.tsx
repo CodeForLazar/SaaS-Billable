@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/format';
-import { DATE_ONLY_ZONE, STATUS_BADGES, STATUS_LABELS } from '@/lib/invoice-status';
-import type { InvoiceView } from '@/lib/invoice-view';
-import { basisPointsToPercent, centsToInput, formatMoney } from '@/lib/money';
+import { DATE_ONLY_ZONE, STATUS_BADGES, STATUS_LABELS } from '@/utils/invoice-status';
+import type { InvoiceView } from '@/utils/invoice-view';
+import { basisPointsToPercent, centsToInput, formatMoney } from '@/utils/money';
 import { cn } from '@/lib/utils';
 
 // The invoice as a document ("the paper"): used on the app's invoice page and on the public page

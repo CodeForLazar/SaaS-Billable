@@ -11,7 +11,7 @@ import {
    CardHeader,
    CardTitle
 } from '@/components/ui/card';
-import { authHref, safeRedirectPath } from '@/lib/safe-redirect';
+import { authHref, safeRedirectPath } from '@/utils/safe-redirect';
 import { getSession } from '@/lib/session';
 import { SignInForm } from '../_components/sign-in-form';
 

@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { projectSchema } from '@/lib/validations/project';
+import { projectSchema } from '@/validations/project';
 import {
    type ProjectResult,
    createProject,

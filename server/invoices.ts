@@ -10,17 +10,17 @@ import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { dayKey, formatDate, formatDayRange } from '@/lib/format';
 import { invoicePdfFilename, renderInvoicePdf } from '@/lib/invoice-pdf';
-import { DATE_ONLY_ZONE } from '@/lib/invoice-status';
-import { toInvoiceView } from '@/lib/invoice-view';
+import { DATE_ONLY_ZONE } from '@/utils/invoice-status';
+import { toInvoiceView } from '@/utils/invoice-view';
 import { sendEmail } from '@/lib/mailer';
-import { formatMoney } from '@/lib/money';
+import { formatMoney } from '@/utils/money';
 import { can } from '@/lib/permissions';
 import { getTimeZone, requestNow } from '@/lib/time-zone';
 import type {
    InvoiceDetailsInput,
    InvoiceLineInput,
    InvoiceListQuery
-} from '@/lib/validations/invoice';
+} from '@/validations/invoice';
 import { isDemoWorkspace } from '@/server/demo';
 import { requireMembership } from '@/server/organizations';
 import { getWorkspaceSettings } from '@/server/settings';

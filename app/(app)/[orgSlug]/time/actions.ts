@@ -4,7 +4,7 @@ import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getTimeZone } from '@/lib/time-zone';
-import { startTimerSchema, timeEntrySchema } from '@/lib/validations/time-entry';
+import { startTimerSchema, timeEntrySchema } from '@/validations/time-entry';
 import {
    type TimerResult,
    createTimeEntry,

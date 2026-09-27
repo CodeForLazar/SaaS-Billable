@@ -4,8 +4,8 @@ import { cache } from 'react';
 import { db } from '@/lib/db';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import { can } from '@/lib/permissions';
-import type { ListQuery } from '@/lib/validations/list';
-import type { ProjectInput } from '@/lib/validations/project';
+import type { ListQuery } from '@/validations/list';
+import type { ProjectInput } from '@/validations/project';
 import { requireMembership } from '@/server/organizations';
 
 export const PROJECTS_PAGE_SIZE = 20;

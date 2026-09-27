@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
-import type { StartTimerInput, TimeEntryInput } from '@/lib/validations/time-entry';
+import type { StartTimerInput, TimeEntryInput } from '@/validations/time-entry';
 import { zonedToUtc } from '@/lib/zoned-time';
 import { getSession } from '@/lib/session';
 import { requireMembership } from '@/server/organizations';

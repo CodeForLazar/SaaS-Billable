@@ -15,8 +15,13 @@ import {
    TableRow
 } from '@/components/ui/table';
 import { dayKey, formatDate } from '@/lib/format';
-import { DATE_ONLY_ZONE, STATUS_BADGES, STATUS_LABELS, displayStatus } from '@/lib/invoice-status';
-import { formatMoney } from '@/lib/money';
+import {
+   DATE_ONLY_ZONE,
+   STATUS_BADGES,
+   STATUS_LABELS,
+   displayStatus
+} from '@/utils/invoice-status';
+import { formatMoney } from '@/utils/money';
 import { can } from '@/lib/permissions';
 import { getTimeZone, requestNow } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
@@ -24,7 +29,7 @@ import {
    INVOICE_FILTERS,
    type InvoiceListQuery,
    invoiceListQuerySchema
-} from '@/lib/validations/invoice';
+} from '@/validations/invoice';
 import { listInvoices } from '@/server/invoices';
 import { requireMembership } from '@/server/organizations';
 

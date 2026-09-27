@@ -2,7 +2,7 @@ import 'server-only';
 import Stripe from 'stripe';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
-import { formatMoney } from '@/lib/money';
+import { formatMoney } from '@/utils/money';
 import { STRIPE_MINIMUM_CENTS, getStripe } from '@/lib/stripe';
 import { getPublicInvoice, publicInvoiceUrl } from '@/server/invoices';
 
