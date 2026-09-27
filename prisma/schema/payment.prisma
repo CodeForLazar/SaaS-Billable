@@ -1,0 +1,26 @@
+// Money received for an invoice. For now only online card payments through Stripe Checkout
+// (all into the platform's Stripe account; see the decision log). Payments are records: they're
+// never edited.
+model Payment {
+  id             String  @id @default(cuid(2))
+  organizationId String
+  invoiceId      String
+  // Composite FK: the invoice is in the same workspace. Cascade only matters when the whole
+  // workspace is deleted: invoices with payments are never deleted (only drafts are, and a draft
+  // can't be paid).
+  invoice        Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  amountCents Int
+  currency    String
+
+  // One payment per Checkout session: the webhook and the "thank you" page may both report the
+  // same session (and Stripe retries webhooks), so this unique key makes recording idempotent.
+  stripeCheckoutSessionId String  @unique
+  stripePaymentIntentId   String?
+
+  paidAt    DateTime
+  createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@map("payment")
+}
