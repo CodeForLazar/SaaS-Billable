@@ -46,6 +46,11 @@ model Invoice {
   sentAt      DateTime?
   paidAt      DateTime?
   voidedAt    DateTime?
+
+  // Payment reminders sent to the client (at most one per 24 hours, see server/invoices.ts).
+  lastReminderAt DateTime?
+  reminderCount  Int       @default(0)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
