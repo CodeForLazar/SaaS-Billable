@@ -35,7 +35,7 @@ export default function VerifyEmail({ name, url }: VerifyEmailProps) {
                   </Text>
                   <Button
                      href={url}
-                     className='rounded-md bg-zinc-900 px-5 py-3 text-sm font-medium text-white'
+                     className='rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white'
                   >
                      Confirm email
                   </Button>
