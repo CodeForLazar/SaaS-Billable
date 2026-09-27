@@ -24,6 +24,9 @@ const config = {
    nonBillable: { label: 'Non-billable', color: 'var(--chart-4)' }
 } satisfies ChartConfig;
 
+/** Longer project names are cut on the axis ("Brand guidelines and packa…"); the tooltip has the full name. */
+const MAX_NAME = 22;
+
 const hours = (value: number) => formatDuration(Math.round(value * 3600));
 
 /** Whole-hour axis ticks from 0 past the longest bar, about 5 of them: [0, 1, 2, 3, 4, 5]. */
@@ -36,6 +39,9 @@ function hourTicks(data: ProjectHours[]) {
 /** One horizontal bar per project, billable and non-billable time stacked. */
 export function HoursChart({ data }: { data: ProjectHours[] }) {
    const ticks = hourTicks(data);
+   // Room for the longest project name (about 8 px per character at this size), within limits.
+   const longestName = Math.max(...data.map((row) => Math.min(row.name.length, MAX_NAME)));
+   const labelWidth = Math.min(180, Math.max(56, longestName * 8 + 12));
    return (
       <ChartContainer
          config={config}
@@ -59,9 +65,10 @@ export function HoursChart({ data }: { data: ProjectHours[] }) {
                dataKey='name'
                tickLine={false}
                axisLine={false}
-               width={96}
-               // Long project names are cut on the axis; the tooltip shows the full name.
-               tickFormatter={(name: string) => (name.length > 14 ? `${name.slice(0, 13)}…` : name)}
+               width={labelWidth}
+               tickFormatter={(name: string) =>
+                  name.length > MAX_NAME ? `${name.slice(0, MAX_NAME - 1)}…` : name
+               }
             />
             <ChartTooltip
                cursor={false}
