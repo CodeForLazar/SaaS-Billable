@@ -72,6 +72,12 @@ export const auth = betterAuth({
          roles,
          // Invitations expire after 48 hours (the default). The link opens our accept page.
          sendInvitationEmail: async ({ id, email, role, organization, inviter }) => {
+            // Demo workspaces never send email (server/demo.ts): the invitation is still created.
+            const demo = await db.demoSandbox.findUnique({
+               where: { organizationId: organization.id },
+               select: { key: true }
+            });
+            if (demo) return;
             await sendEmail({
                to: email,
                subject: `${inviter.user.name} invited you to ${organization.name}`,

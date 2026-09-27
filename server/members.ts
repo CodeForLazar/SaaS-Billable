@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { can } from '@/lib/permissions';
+import { isDemoWorkspace } from '@/server/demo';
 import { requireMembership } from '@/server/organizations';
 
 /**
@@ -77,7 +78,8 @@ function hasRole(memberRole: string, name: string) {
    return memberRole.split(',').some((role) => role.trim() === name);
 }
 
-export type InviteResult = { ok: true } | { ok: false; field?: 'email'; message: string };
+export type InviteResult =
+   { ok: true; emailed: boolean } | { ok: false; field?: 'email'; message: string };
 
 /**
  * Invite someone to the workspace by email. The organization comes from the membership check,
@@ -98,7 +100,8 @@ export async function inviteMember(
          body: { email: input.email, role: input.role, organizationId: organization.id },
          headers: await headers()
       });
-      return { ok: true };
+      // In a demo workspace the invitation exists but no email went out (see lib/auth.ts).
+      return { ok: true, emailed: !(await isDemoWorkspace(organization.id)) };
    } catch (error) {
       if (!(error instanceof APIError)) throw error;
       switch (error.body?.code) {

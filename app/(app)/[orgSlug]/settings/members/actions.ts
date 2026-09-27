@@ -19,6 +19,7 @@ export type InviteFormState =
         fieldErrors?: { email?: string[]; role?: string[] };
         values?: { email?: string; role?: string };
         sentTo?: string;
+        emailed?: boolean;
      }
    | undefined;
 
@@ -46,7 +47,7 @@ export async function inviteMemberAction(
 
    // Re-render this page's server data so the new invitation shows up in the list.
    refresh();
-   return { sentTo: parsed.data.email };
+   return { sentTo: parsed.data.email, emailed: result.emailed };
 }
 
 // The actions below are called directly from click handlers with plain arguments (not a form).

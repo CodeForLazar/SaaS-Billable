@@ -79,7 +79,11 @@ export function InviteForm({ action }: { action: InviteAction }) {
          {state?.sentTo && (
             <Alert>
                <MailCheck />
-               <AlertDescription>Invitation sent to {state.sentTo}.</AlertDescription>
+               <AlertDescription>
+                  {state.emailed
+                     ? `Invitation sent to ${state.sentTo}.`
+                     : `Invitation created for ${state.sentTo}. Emails aren’t sent from the demo.`}
+               </AlertDescription>
             </Alert>
          )}
 

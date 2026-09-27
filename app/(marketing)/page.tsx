@@ -8,13 +8,15 @@ import {
    ShieldCheck,
    Timer
 } from 'lucide-react';
+import { DemoButton } from '@/components/demo-button';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getSession } from '@/lib/session';
 import { site } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
-// The public landing page at "/". Screenshots and the one-click demo login come in Phase 8,
-// once the features they show exist.
+// The public landing page at "/". "Try the demo" is the main call to action: reviewers get a
+// workspace full of sample data without signing up. Screenshots come with the README.
 
 const features: { icon: LucideIcon; title: string; description: string }[] = [
    {
@@ -49,7 +51,10 @@ const features: { icon: LucideIcon; title: string; description: string }[] = [
    }
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+   // getSession is cached per request (the layout's header asks too).
+   const session = await getSession();
+
    return (
       <>
          <section className='mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 py-24 text-center'>
@@ -60,17 +65,31 @@ export default function LandingPage() {
                {site.tagline}
             </h1>
             <p className='max-w-xl text-lg text-pretty text-muted-foreground'>{site.description}</p>
-            <div className='flex flex-col gap-2 sm:flex-row'>
-               <Link href='/sign-up' className={cn(buttonVariants({ size: 'lg' }), 'px-6')}>
-                  Get started for free
+            {session ? (
+               <Link href='/dashboard' className={cn(buttonVariants({ size: 'lg' }), 'px-6')}>
+                  Go to your dashboard
                </Link>
-               <Link
-                  href='/sign-in'
-                  className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'px-6')}
-               >
-                  Sign in
-               </Link>
-            </div>
+            ) : (
+               <div className='flex flex-col items-center gap-3'>
+                  {/* Stacked and equally wide on phones, side by side from sm up. */}
+                  <div className='flex w-full max-w-xs flex-col items-stretch gap-2 sm:w-auto sm:max-w-none sm:flex-row sm:items-start'>
+                     <DemoButton className='w-full px-6' formClassName='w-full sm:w-auto' />
+                     <Link
+                        href='/sign-up'
+                        className={cn(
+                           buttonVariants({ variant: 'outline', size: 'lg' }),
+                           'w-full px-6 sm:w-auto'
+                        )}
+                     >
+                        Get started for free
+                     </Link>
+                  </div>
+                  <p className='text-sm text-muted-foreground'>
+                     The demo opens your own workspace with sample clients, time and invoices. No
+                     sign-up needed.
+                  </p>
+               </div>
+            )}
          </section>
 
          <section className='border-t bg-muted/40'>

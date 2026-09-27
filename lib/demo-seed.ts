@@ -34,6 +34,8 @@ export type DemoSeedOptions = {
    /** Dates and working hours are laid out on this clock ("Europe/Skopje"). */
    timeZone: string;
    now?: Date;
+   /** A "Try the demo" sandbox: deleted with its users after this date (server/demo.ts). */
+   expiresAt?: Date;
 };
 
 export type DemoSeedResult = { organizationId: string; ownerId: string; ownerEmail: string };
@@ -649,6 +651,12 @@ export async function seedDemoWorkspace(
             }
          });
          await tx.payment.createMany({ data: payments });
+         // In the same transaction, so a sandbox never exists without its expiry date.
+         if (options.expiresAt) {
+            await tx.demoSandbox.create({
+               data: { organizationId, key, expiresAt: options.expiresAt, createdAt: now }
+            });
+         }
       },
       { timeout: 30_000 }
    );

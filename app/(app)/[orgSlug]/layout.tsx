@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { after } from 'next/server';
 import { AppHeader } from '@/components/app-header';
 import { AppSidebar } from '@/components/app-sidebar';
+import { DemoBanner } from '@/components/demo-banner';
 import { RunningTimer } from '@/components/running-timer';
 import { TimeZoneSync } from '@/components/time-zone-sync';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -11,6 +12,7 @@ import {
    rememberActiveWorkspace,
    requireMembership
 } from '@/server/organizations';
+import { getDemoSandbox } from '@/server/demo';
 import { getRunningTimer } from '@/server/time-entries';
 
 // The app shell around every workspace page: sidebar (workspace switcher, navigation, user menu)
@@ -21,9 +23,10 @@ import { getRunningTimer } from '@/server/time-entries';
 // don't re-run on every navigation); the call is cached, so it's one database lookup per request.
 export default async function WorkspaceLayout({ children, params }: LayoutProps<'/[orgSlug]'>) {
    const { session, organization, role } = await requireMembership((await params).orgSlug);
-   const [memberships, timer] = await Promise.all([
+   const [memberships, timer, demo] = await Promise.all([
       listMemberships(session.user.id),
-      getRunningTimer()
+      getRunningTimer(),
+      getDemoSandbox(organization.id)
    ]);
 
    // Remember this workspace for the next sign-in. after() runs it once the response is sent,
@@ -46,6 +49,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
             user={{ name: session.user.name, email: session.user.email, image: session.user.image }}
          />
          <SidebarInset>
+            {demo && <DemoBanner expiresAt={demo.expiresAt} now={requestNow()} />}
             <AppHeader>
                {/* The header shows the running timer on every page. The layout re-renders after
                    start/stop because those actions call refresh(). */}

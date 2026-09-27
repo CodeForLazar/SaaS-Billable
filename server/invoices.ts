@@ -21,6 +21,7 @@ import type {
    InvoiceLineInput,
    InvoiceListQuery
 } from '@/lib/validations/invoice';
+import { isDemoWorkspace } from '@/server/demo';
 import { requireMembership } from '@/server/organizations';
 import { getWorkspaceSettings } from '@/server/settings';
 
@@ -43,6 +44,11 @@ export type InvoiceResult =
    | { ok: false; message: string; field?: 'clientId' };
 
 const gone = { ok: false, message: 'This invoice no longer exists.' } as const;
+// Demo workspaces never send email: a visitor could otherwise email any address they type in.
+const demoNoEmail = {
+   ok: false,
+   message: 'Emails aren’t sent from the demo, so nothing went out. Everything else works.'
+} as const;
 const notDraft = {
    ok: false,
    message: 'This invoice has been sent, so it can no longer be changed.'
@@ -626,6 +632,7 @@ export async function emailInvoice(orgSlug: string, invoiceId: string): Promise<
    if (!found.billToEmail) {
       return { ok: false, message: 'This invoice has no client email address.' };
    }
+   if (await isDemoWorkspace(organization.id)) return demoNoEmail;
 
    const { view } = await getInvoiceView(orgSlug, invoiceId);
    const pdf = await renderInvoicePdf(view);
@@ -674,6 +681,7 @@ export async function sendInvoiceReminder(
    if (!found.billToEmail) {
       return { ok: false, message: 'This invoice has no client email address.' };
    }
+   if (await isDemoWorkspace(organization.id)) return demoNoEmail;
 
    // Claim the reminder before sending: the condition makes two clicks (or two admins) at the
    // same moment send one email, not two.

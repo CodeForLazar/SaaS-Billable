@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { DemoButton } from '@/components/demo-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
    Card,
@@ -57,14 +58,22 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
             )}
             <SignInForm redirectTo={redirectTo} defaultEmail={defaultEmail} />
          </CardContent>
-         <CardFooter className='justify-center text-sm text-muted-foreground'>
-            Don&apos;t have an account?&nbsp;
-            <Link
-               href={authHref('/sign-up', { redirectTo, email: defaultEmail })}
-               className='font-medium text-foreground underline underline-offset-4'
-            >
-               Sign up
-            </Link>
+         <CardFooter className='flex-col gap-4 text-sm text-muted-foreground'>
+            <p>
+               Don&apos;t have an account?&nbsp;
+               <Link
+                  href={authHref('/sign-up', { redirectTo, email: defaultEmail })}
+                  className='font-medium text-foreground underline underline-offset-4'
+               >
+                  Sign up
+               </Link>
+            </p>
+            {/* Not when following an invitation: that needs the invitee's own account. */}
+            {!redirectTo && (
+               <DemoButton variant='outline' size='default'>
+                  Just looking? Try the demo
+               </DemoButton>
+            )}
          </CardFooter>
       </Card>
    );
