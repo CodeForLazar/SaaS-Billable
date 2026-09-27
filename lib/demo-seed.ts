@@ -13,6 +13,7 @@ import {
 } from 'date-fns';
 import { hashPassword } from 'better-auth/crypto';
 import { dayKey, formatDayRange } from '@/lib/format';
+import { lineAmount, secondsToQuantity } from '@/utils/invoice-math';
 import type { Prisma, PrismaClient } from '@/lib/generated/prisma/client';
 
 // A realistic demo workspace: a small design & development studio with a team of three, six
@@ -440,7 +441,7 @@ export async function seedDemoWorkspace(
       return [...byProject.entries()].map(([projectKey, projectEntries]) => {
          const project = projects.find((p) => p.key === projectKey)!;
          const seconds = projectEntries.reduce((sum, entry) => sum + (entry.durationSec ?? 0), 0);
-         const quantityHundredths = Math.max(1, Math.round(seconds / 36));
+         const quantityHundredths = secondsToQuantity(seconds);
          const lineId = newId();
          for (const entry of projectEntries) entry.invoiceLineId = lineId;
          return {
@@ -448,7 +449,7 @@ export async function seedDemoWorkspace(
             description: `${project.name} (${formatDayRange(projectEntries[0].startedAt, projectEntries.at(-1)!.startedAt, timeZone)})`,
             quantityHundredths,
             unitPriceCents: project.rate,
-            amountCents: Math.round((quantityHundredths * project.rate) / 100)
+            amountCents: lineAmount(quantityHundredths, project.rate)
          };
       });
    }
@@ -488,7 +489,7 @@ export async function seedDemoWorkspace(
                description: `${project.name}: ${pick(PHASES)} phase`,
                quantityHundredths,
                unitPriceCents: project.rate,
-               amountCents: Math.round((quantityHundredths * project.rate) / 100)
+               amountCents: lineAmount(quantityHundredths, project.rate)
             };
          });
          // The month the tracked time starts only has invoices from its first days.
@@ -507,7 +508,7 @@ export async function seedDemoWorkspace(
                return {
                   ...line,
                   quantityHundredths,
-                  amountCents: Math.round((quantityHundredths * line.unitPriceCents) / 100)
+                  amountCents: lineAmount(quantityHundredths, line.unitPriceCents)
                };
             });
             addInvoice(client, corrected, {

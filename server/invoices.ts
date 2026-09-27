@@ -11,6 +11,7 @@ import { Prisma } from '@/lib/generated/prisma/client';
 import { dayKey, formatDate, formatDayRange } from '@/lib/format';
 import { invoicePdfFilename, renderInvoicePdf } from '@/lib/invoice-pdf';
 import { DATE_ONLY_ZONE } from '@/utils/invoice-status';
+import { lineAmount, secondsToQuantity, taxAmount } from '@/utils/invoice-math';
 import { toInvoiceView } from '@/utils/invoice-view';
 import { sendEmail } from '@/lib/mailer';
 import { formatMoney } from '@/utils/money';
@@ -63,11 +64,6 @@ const unbilledTime = (organizationId: string) =>
       invoiceLineId: null
    }) satisfies Prisma.TimeEntryWhereInput;
 
-/** A line's amount: quantity (hundredths) × unit price (cents), rounded to the cent. */
-export function lineAmount(quantityHundredths: number, unitPriceCents: number) {
-   return Math.round((quantityHundredths * unitPriceCents) / 100);
-}
-
 /** Recomputes the invoice's totals from its lines. Always inside the transaction that changed them. */
 async function recalculate(tx: Prisma.TransactionClient, invoiceId: string) {
    const [{ _sum }, invoice] = await Promise.all([
@@ -78,7 +74,7 @@ async function recalculate(tx: Prisma.TransactionClient, invoiceId: string) {
       })
    ]);
    const subtotalCents = _sum.amountCents ?? 0;
-   const taxCents = Math.round((subtotalCents * invoice.taxRateBasisPoints) / 10_000);
+   const taxCents = taxAmount(subtotalCents, invoice.taxRateBasisPoints);
    await tx.invoice.update({
       where: { id: invoiceId },
       data: { subtotalCents, taxCents, totalCents: subtotalCents + taxCents }
@@ -153,7 +149,7 @@ export async function listUnbilledTime(orgSlug: string, clientId?: string) {
          const project = byId.get(group.projectId);
          if (!project) return [];
          const seconds = group._sum.durationSec ?? 0;
-         const quantity = Math.max(1, Math.round(seconds / 36)); // hours in hundredths
+         const quantity = secondsToQuantity(seconds);
          return [
             {
                project,
@@ -261,7 +257,7 @@ export async function createInvoiceFromTime(
             if (entries.length === 0) continue;
 
             const seconds = entries.reduce((sum, entry) => sum + (entry.durationSec ?? 0), 0);
-            const quantityHundredths = Math.max(1, Math.round(seconds / 36)); // hours, 2 decimals
+            const quantityHundredths = secondsToQuantity(seconds);
             const unitPriceCents = project.hourlyRateCents ?? 0;
             const period = formatDayRange(
                entries[0].startedAt,
