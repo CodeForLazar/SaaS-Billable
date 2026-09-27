@@ -14,7 +14,6 @@ export const RESERVED_SLUGS = new Set([
    'accept-invitation',
    'i', // public invoice pages (/i/<token>)
    // planned or likely routes
-   'i',
    'invite',
    'invitations',
    'account',
