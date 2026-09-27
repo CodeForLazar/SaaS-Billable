@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,15 +35,9 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
       await getMembersOverview(orgSlug);
 
    return (
-      <main className='mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 py-16'>
+      <div className='flex w-full max-w-4xl flex-1 flex-col gap-10 p-6'>
          <div>
-            <Link
-               href={`/${organization.slug}/dashboard`}
-               className='text-sm text-muted-foreground hover:underline'
-            >
-               ← {organization.name}
-            </Link>
-            <h1 className='mt-2 text-2xl font-semibold'>Members</h1>
+            <h1 className='text-2xl font-semibold'>Members</h1>
             <p className='text-muted-foreground'>People who have access to this workspace.</p>
          </div>
 
@@ -178,6 +171,6 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                organizationName={organization.name}
             />
          </section>
-      </main>
+      </div>
    );
 }
