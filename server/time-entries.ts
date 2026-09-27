@@ -1,15 +1,18 @@
 import 'server-only';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { cache } from 'react';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
-import type { StartTimerInput } from '@/lib/validations/time-entry';
+import type { StartTimerInput, TimeEntryInput } from '@/lib/validations/time-entry';
+import { zonedToUtc } from '@/lib/zoned-time';
 import { getSession } from '@/lib/session';
 import { requireMembership } from '@/server/organizations';
 
 // Time entries belong to a workspace AND a person. Everyone in a workspace tracks their own time;
 // these functions only ever touch the signed-in user's entries.
 
-export type TimerResult = { ok: true } | { ok: false; message: string; field?: 'projectId' };
+export type TimerResult =
+   { ok: true } | { ok: false; message: string; field?: 'projectId' | 'end' };
 
 /** Fields that finish an entry: end now, duration in whole seconds. */
 function finishAt(startedAt: Date, endedAt: Date) {
@@ -142,12 +145,150 @@ export async function listMyRecentEntries(orgSlug: string) {
    });
 }
 
-/** Active projects to pick from when starting a timer, grouped by client name then project. */
-export async function listTrackableProjects(orgSlug: string) {
+/**
+ * Projects to pick from (timer, manual entry): the active ones, sorted by client then project,
+ * plus `includeId` even if archived, so an entry's current project still shows up when editing.
+ */
+export async function listTrackableProjects(orgSlug: string, includeId?: string) {
    const { organization } = await requireMembership(orgSlug);
    return db.project.findMany({
-      where: { organizationId: organization.id, archivedAt: null },
+      where: {
+         organizationId: organization.id,
+         OR: [{ archivedAt: null }, ...(includeId ? [{ id: includeId }] : [])]
+      },
       orderBy: [{ client: { name: 'asc' } }, { name: 'asc' }, { id: 'asc' }],
-      select: { id: true, name: true, client: { select: { name: true } } }
+      select: { id: true, name: true, archivedAt: true, client: { select: { name: true } } }
    });
+}
+
+/**
+ * One of the signed-in user's finished entries in this workspace, or 404 (someone else's entry,
+ * another workspace's, or a running timer all look the same). Shared by the page and its metadata.
+ */
+export const getMyTimeEntry = cache(async (orgSlug: string, entryId: string) => {
+   const { session, organization } = await requireMembership(orgSlug);
+   const entry = await db.timeEntry.findFirst({
+      where: {
+         id: entryId,
+         organizationId: organization.id,
+         userId: session.user.id,
+         endedAt: { not: null }
+      },
+      select: {
+         id: true,
+         projectId: true,
+         description: true,
+         billable: true,
+         startedAt: true,
+         endedAt: true
+      }
+   });
+   if (!entry) notFound();
+   return { organization, entry };
+});
+
+/**
+ * The entry's times as UTC instants. The form's date and times are on the user's clock
+ * (`timeZone`). Around a daylight-saving change the end can land before the start (e.g. 02:30 in
+ * a skipped hour), which the database would reject: that's reported as a field error instead.
+ */
+function toInstants(input: TimeEntryInput, timeZone: string) {
+   const startedAt = zonedToUtc(input.date, input.start, timeZone);
+   const endedAt = zonedToUtc(input.date, input.end, timeZone);
+   if (endedAt <= startedAt) return null;
+   return { startedAt, ...finishAt(startedAt, endedAt) };
+}
+
+const endBeforeStart = {
+   ok: false,
+   field: 'end',
+   message: 'End time must be after the start time'
+} as const;
+
+/** Adds a finished entry by hand (forgot the timer). Any member, for themselves. */
+export async function createTimeEntry(
+   orgSlug: string,
+   input: TimeEntryInput,
+   timeZone: string
+): Promise<TimerResult> {
+   const { session, organization } = await requireMembership(orgSlug);
+
+   const project = await db.project.findFirst({
+      where: { id: input.projectId, organizationId: organization.id, archivedAt: null },
+      select: { id: true }
+   });
+   if (!project) {
+      return { ok: false, field: 'projectId', message: 'Choose one of your active projects.' };
+   }
+   const times = toInstants(input, timeZone);
+   if (!times) return endBeforeStart;
+
+   await db.timeEntry.create({
+      data: {
+         organizationId: organization.id,
+         userId: session.user.id,
+         projectId: project.id,
+         description: input.description,
+         billable: input.billable,
+         ...times
+      }
+   });
+   return { ok: true };
+}
+
+/** Changes one of the signed-in user's finished entries. */
+export async function updateTimeEntry(
+   orgSlug: string,
+   entryId: string,
+   input: TimeEntryInput,
+   timeZone: string
+): Promise<TimerResult> {
+   const { session, organization } = await requireMembership(orgSlug);
+   const mine = { id: entryId, organizationId: organization.id, userId: session.user.id };
+
+   const entry = await db.timeEntry.findFirst({
+      where: { ...mine, endedAt: { not: null } },
+      select: { projectId: true }
+   });
+   if (!entry) return { ok: false, message: 'This entry no longer exists.' };
+
+   // Another active project of this workspace, or keep the current one even if it's archived.
+   const project = await db.project.findFirst({
+      where: {
+         id: input.projectId,
+         organizationId: organization.id,
+         ...(input.projectId !== entry.projectId && { archivedAt: null })
+      },
+      select: { id: true }
+   });
+   if (!project) {
+      return { ok: false, field: 'projectId', message: 'Choose one of your active projects.' };
+   }
+   const times = toInstants(input, timeZone);
+   if (!times) return endBeforeStart;
+
+   await db.timeEntry.updateMany({
+      where: { ...mine, endedAt: { not: null } },
+      data: {
+         projectId: project.id,
+         description: input.description,
+         billable: input.billable,
+         ...times
+      }
+   });
+   return { ok: true };
+}
+
+/** Deletes one of the signed-in user's finished entries. (Phase 5: not once it's invoiced.) */
+export async function deleteTimeEntry(orgSlug: string, entryId: string): Promise<TimerResult> {
+   const { session, organization } = await requireMembership(orgSlug);
+   const { count } = await db.timeEntry.deleteMany({
+      where: {
+         id: entryId,
+         organizationId: organization.id,
+         userId: session.user.id,
+         endedAt: { not: null } // a running timer is stopped, not deleted
+      }
+   });
+   return count ? { ok: true } : { ok: false, message: 'This entry no longer exists.' };
 }

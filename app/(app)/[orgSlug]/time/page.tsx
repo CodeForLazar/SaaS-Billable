@@ -6,14 +6,19 @@ import { Elapsed } from '@/components/elapsed';
 import { StopTimerButton } from '@/components/stop-timer-button';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { dayKey, formatDuration, formatTime, formatWeekday } from '@/lib/format';
 import { can } from '@/lib/permissions';
 import { getTimeZone, requestNow } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
+import { utcToZoned } from '@/lib/zoned-time';
 import { requireMembership } from '@/server/organizations';
 import { getRunningTimer, listMyRecentEntries, listTrackableProjects } from '@/server/time-entries';
-import { startTimerAction } from './actions';
+import { createTimeEntryAction, startTimerAction } from './actions';
+import { EntryActions } from './entry-actions';
+import { EntryForm } from './entry-form';
+import { groupProjects } from './group-projects';
 import { StartTimerForm } from './start-timer-form';
 
 export async function generateMetadata({
@@ -34,14 +39,8 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
    ]);
    const timerHere = timer?.organization.slug === organization.slug ? timer : null;
 
-   // Projects grouped by client for the picker (already sorted by client, then project).
-   const groups: { client: string; projects: { value: string; label: string }[] }[] = [];
-   for (const project of projects) {
-      const last = groups.at(-1);
-      const item = { value: project.id, label: project.name };
-      if (last?.client === project.client.name) last.projects.push(item);
-      else groups.push({ client: project.client.name, projects: [item] });
-   }
+   // Projects grouped by client for the pickers (already sorted by client, then project).
+   const groups = groupProjects(projects);
 
    // Entries grouped by calendar day in the user's time zone, with a total per day.
    const days: { key: string; label: string; totalSec: number; entries: typeof entries }[] = [];
@@ -73,33 +72,9 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
          </div>
 
          <Card>
-            <CardHeader>
-               <CardTitle>{timerHere ? 'Timer running' : 'Start a timer'}</CardTitle>
-            </CardHeader>
             <CardContent>
-               {timerHere ? (
-                  <div className='flex flex-wrap items-center justify-between gap-4'>
-                     <div className='min-w-0'>
-                        <div className='flex items-center gap-2 font-medium'>
-                           <ColorDot color={timerHere.project.color} />
-                           {timerHere.project.name}
-                           <span className='font-normal text-muted-foreground'>
-                              · {timerHere.project.client.name}
-                           </span>
-                        </div>
-                        <p className='text-sm text-muted-foreground'>
-                           {timerHere.description ?? 'No description'} · started{' '}
-                           {formatTime(timerHere.startedAt, timeZone)}
-                        </p>
-                     </div>
-                     <div className='flex items-center gap-4'>
-                        <span className='text-3xl font-semibold'>
-                           <Elapsed startedAt={timerHere.startedAt} renderedAt={now} />
-                        </span>
-                        <StopTimerButton />
-                     </div>
-                  </div>
-               ) : projects.length === 0 ? (
+               {/* No projects to track on (and no timer of mine running here) */}
+               {projects.length === 0 && !timerHere ? (
                   <div className='flex flex-col items-start gap-2'>
                      <p className='text-sm text-muted-foreground'>
                         Time is tracked on projects. There are no active projects yet.
@@ -114,15 +89,63 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
                      )}
                   </div>
                ) : (
-                  <StartTimerForm
-                     action={startTimerAction.bind(null, organization.slug)}
-                     groups={groups}
-                     note={
-                        timer
-                           ? `Your timer on ${timer.project.name} in ${timer.organization.name} is still running. Starting one here stops it.`
-                           : undefined
-                     }
-                  />
+                  // Two ways to track: a live timer, or typing in time after the fact.
+                  <Tabs defaultValue='timer' className='gap-4'>
+                     <TabsList>
+                        <TabsTrigger value='timer'>Timer</TabsTrigger>
+                        <TabsTrigger value='manual'>Add time</TabsTrigger>
+                     </TabsList>
+                     <TabsContent value='timer'>
+                        {timerHere ? (
+                           <div className='flex flex-wrap items-center justify-between gap-4'>
+                              <div className='min-w-0'>
+                                 <div className='flex items-center gap-2 font-medium'>
+                                    <ColorDot color={timerHere.project.color} />
+                                    {timerHere.project.name}
+                                    <span className='font-normal text-muted-foreground'>
+                                       · {timerHere.project.client.name}
+                                    </span>
+                                 </div>
+                                 <p className='text-sm text-muted-foreground'>
+                                    {timerHere.description ?? 'No description'} · started{' '}
+                                    {formatTime(timerHere.startedAt, timeZone)}
+                                 </p>
+                              </div>
+                              <div className='flex items-center gap-4'>
+                                 <span className='text-3xl font-semibold'>
+                                    <Elapsed startedAt={timerHere.startedAt} renderedAt={now} />
+                                 </span>
+                                 <StopTimerButton />
+                              </div>
+                           </div>
+                        ) : (
+                           <StartTimerForm
+                              action={startTimerAction.bind(null, organization.slug)}
+                              groups={groups}
+                              note={
+                                 timer
+                                    ? `Your timer on ${timer.project.name} in ${timer.organization.name} is still running. Starting one here stops it.`
+                                    : undefined
+                              }
+                           />
+                        )}
+                     </TabsContent>
+                     <TabsContent value='manual'>
+                        <EntryForm
+                           action={createTimeEntryAction.bind(null, organization.slug)}
+                           groups={groups}
+                           defaultValues={{
+                              projectId: '',
+                              description: '',
+                              billable: 'on',
+                              date: utcToZoned(new Date(now), timeZone).date,
+                              start: '',
+                              end: ''
+                           }}
+                           submitLabel='Add time'
+                        />
+                     </TabsContent>
+                  </Tabs>
                )}
             </CardContent>
          </Card>
@@ -136,7 +159,7 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
                   <Clock className='size-8 text-muted-foreground' aria-hidden='true' />
                   <p className='font-medium'>No time tracked yet</p>
                   <p className='text-sm text-muted-foreground'>
-                     Start a timer above; finished entries show up here.
+                     Start a timer or add time above; entries show up here.
                   </p>
                </div>
             ) : (
@@ -173,6 +196,13 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
                               <span className='w-12 text-right font-medium tabular-nums'>
                                  {formatDuration(entry.durationSec ?? 0)}
                               </span>
+                              <EntryActions
+                                 orgSlug={organization.slug}
+                                 entry={{
+                                    id: entry.id,
+                                    label: `${formatDuration(entry.durationSec ?? 0)} on ${entry.project.name} (${day.label})`
+                                 }}
+                              />
                            </li>
                         ))}
                      </ul>

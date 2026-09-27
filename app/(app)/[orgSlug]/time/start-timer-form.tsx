@@ -8,19 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-   Select,
-   SelectContent,
-   SelectGroup,
-   SelectItem,
-   SelectLabel,
-   SelectTrigger,
-   SelectValue
-} from '@/components/ui/select';
 import type { StartTimerState } from './actions';
+import type { ProjectGroup } from './group-projects';
+import { ProjectSelect } from './project-select';
 
 type StartTimerAction = (state: StartTimerState, formData: FormData) => Promise<StartTimerState>;
-type ClientGroup = { client: string; projects: { value: string; label: string }[] };
 
 // "What are you working on?" + project + billable + Start. On success the page re-renders with
 // the running timer instead of this form.
@@ -30,14 +22,12 @@ export function StartTimerForm({
    note
 }: {
    action: StartTimerAction;
-   groups: ClientGroup[];
+   groups: ProjectGroup[];
    note?: string;
 }) {
    const [state, formAction, pending] = useActionState(action, undefined);
    const errors = state?.fieldErrors;
    const values = state?.values;
-   // Select shows the label of the chosen value; items is the flat list of all projects.
-   const items = groups.flatMap((group) => group.projects);
 
    return (
       <form action={formAction} noValidate className='flex flex-col gap-4'>
@@ -57,32 +47,11 @@ export function StartTimerForm({
             </Field>
             <Field data-invalid={!!errors?.projectId}>
                <FieldLabel htmlFor='projectId'>Project</FieldLabel>
-               <Select
-                  key={values?.projectId}
-                  name='projectId'
-                  items={items}
-                  defaultValue={values?.projectId || null}
-               >
-                  <SelectTrigger
-                     id='projectId'
-                     className='w-full'
-                     aria-invalid={!!errors?.projectId}
-                  >
-                     <SelectValue placeholder='Choose a project' />
-                  </SelectTrigger>
-                  <SelectContent>
-                     {groups.map((group) => (
-                        <SelectGroup key={group.client}>
-                           <SelectLabel>{group.client}</SelectLabel>
-                           {group.projects.map((project) => (
-                              <SelectItem key={project.value} value={project.value}>
-                                 {project.label}
-                              </SelectItem>
-                           ))}
-                        </SelectGroup>
-                     ))}
-                  </SelectContent>
-               </Select>
+               <ProjectSelect
+                  groups={groups}
+                  defaultValue={values?.projectId}
+                  invalid={!!errors?.projectId}
+               />
                <FieldError errors={toFieldErrors(errors?.projectId)} />
             </Field>
             {/* sm:mt-6 lines the button up with the inputs, below their labels */}
