@@ -18,5 +18,9 @@ declare namespace NodeJS {
       SMTP_USER?: string;
       SMTP_PASS?: string;
       MAIL_FROM: string;
+      /** Stripe secret key (sk_test_... in test mode). Server only. */
+      STRIPE_SECRET_KEY: string;
+      /** Verifies that webhook calls come from Stripe (whsec_...). */
+      STRIPE_WEBHOOK_SECRET: string;
    }
 }

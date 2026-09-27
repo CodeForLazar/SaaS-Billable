@@ -5,9 +5,12 @@ import { ConfirmActionButton } from '@/components/confirm-action-button';
 import { InvoiceDocument } from '@/components/invoice-document';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { basisPointsToPercent, centsToInput } from '@/lib/money';
+import { formatDate, formatTime } from '@/lib/format';
+import { basisPointsToPercent, centsToInput, formatMoney } from '@/lib/money';
+import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { getInvoice, getInvoiceView, publicInvoiceUrl } from '@/server/invoices';
+import { listInvoicePayments } from '@/server/payments';
 import { getWorkspaceSettings } from '@/server/settings';
 import {
    addLineAction,
@@ -39,7 +42,11 @@ export default async function InvoicePage({
    const { orgSlug, invoiceId } = await params;
    // 404 for members (no invoice rights), other workspaces' and unknown invoices.
    const { organization, invoice, view } = await getInvoiceView(orgSlug, invoiceId);
-   const settings = await getWorkspaceSettings(orgSlug);
+   const [settings, payments, timeZone] = await Promise.all([
+      getWorkspaceSettings(orgSlug),
+      listInvoicePayments(organization.id, invoice.id),
+      getTimeZone()
+   ]);
    const slug = organization.slug;
    const basePath = `/${slug}/invoices`;
    const draft = invoice.status === 'DRAFT';
@@ -201,6 +208,30 @@ export default async function InvoicePage({
                   </CardContent>
                </Card>
             </>
+         )}
+
+         {payments.length > 0 && (
+            <Card>
+               <CardHeader>
+                  <CardTitle>Payments</CardTitle>
+                  <CardDescription>Received online by card (Stripe).</CardDescription>
+               </CardHeader>
+               <CardContent>
+                  <ul className='divide-y text-sm'>
+                     {payments.map((payment) => (
+                        <li key={payment.id} className='flex justify-between gap-4 py-2'>
+                           <span>
+                              {formatDate(payment.paidAt, timeZone)},{' '}
+                              {formatTime(payment.paidAt, timeZone)}
+                           </span>
+                           <span className='font-medium tabular-nums'>
+                              {formatMoney(payment.amountCents, payment.currency)}
+                           </span>
+                        </li>
+                     ))}
+                  </ul>
+               </CardContent>
+            </Card>
          )}
 
          {invoice.publicToken && invoice.status !== 'VOID' && (
