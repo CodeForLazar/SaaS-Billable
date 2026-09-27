@@ -12,10 +12,12 @@ const labels: Record<string, string> = {
    projects: 'Projects',
    time: 'Time',
    week: 'Week',
+   invoices: 'Invoices',
    new: 'New',
    edit: 'Edit',
    settings: 'Settings',
-   members: 'Members'
+   members: 'Members',
+   billing: 'Billing'
 };
 
 // Top bar of every workspace page: sidebar toggle + where you are ("Settings / Members"), and on

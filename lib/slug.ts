@@ -12,6 +12,7 @@ export const RESERVED_SLUGS = new Set([
    'reset-password',
    'create-workspace',
    'accept-invitation',
+   'i', // public invoice pages (/i/<token>)
    // planned or likely routes
    'i',
    'invite',

@@ -145,6 +145,7 @@ export async function listMyRecentEntries(orgSlug: string, timeZone: string) {
          endedAt: true,
          durationSec: true,
          billable: true,
+         invoiceLineId: true,
          project: {
             select: { id: true, name: true, color: true, client: { select: { name: true } } }
          }
@@ -205,7 +206,8 @@ export const getMyTimeEntry = cache(async (orgSlug: string, entryId: string) => 
          id: entryId,
          organizationId: organization.id,
          userId: session.user.id,
-         endedAt: { not: null }
+         endedAt: { not: null },
+         invoiceLineId: null // invoiced time is locked: its edit page is a 404
       },
       select: {
          id: true,
@@ -231,6 +233,11 @@ function toInstants(input: TimeEntryInput, timeZone: string) {
    if (endedAt <= startedAt) return null;
    return { startedAt, ...finishAt(startedAt, endedAt) };
 }
+
+const invoiced = {
+   ok: false,
+   message: 'This time is on an invoice, so it can no longer be changed.'
+} as const;
 
 const endBeforeStart = {
    ok: false,
@@ -281,9 +288,10 @@ export async function updateTimeEntry(
 
    const entry = await db.timeEntry.findFirst({
       where: { ...mine, endedAt: { not: null } },
-      select: { projectId: true }
+      select: { projectId: true, invoiceLineId: true }
    });
    if (!entry) return { ok: false, message: 'This entry no longer exists.' };
+   if (entry.invoiceLineId) return invoiced;
 
    // Another active project of this workspace, or keep the current one even if it's archived.
    const project = await db.project.findFirst({
@@ -301,7 +309,7 @@ export async function updateTimeEntry(
    if (!times) return endBeforeStart;
 
    await db.timeEntry.updateMany({
-      where: { ...mine, endedAt: { not: null } },
+      where: { ...mine, endedAt: { not: null }, invoiceLineId: null },
       data: {
          projectId: project.id,
          description: input.description,
@@ -315,13 +323,17 @@ export async function updateTimeEntry(
 /** Deletes one of the signed-in user's finished entries. (Phase 5: not once it's invoiced.) */
 export async function deleteTimeEntry(orgSlug: string, entryId: string): Promise<TimerResult> {
    const { session, organization } = await requireMembership(orgSlug);
+   const mine = { id: entryId, organizationId: organization.id, userId: session.user.id };
    const { count } = await db.timeEntry.deleteMany({
       where: {
-         id: entryId,
-         organizationId: organization.id,
-         userId: session.user.id,
-         endedAt: { not: null } // a running timer is stopped, not deleted
+         ...mine,
+         endedAt: { not: null }, // a running timer is stopped, not deleted
+         invoiceLineId: null // billed time stays (the invoice refers to it)
       }
    });
-   return count ? { ok: true } : { ok: false, message: 'This entry no longer exists.' };
+   if (count) return { ok: true };
+   const invoicedEntry = await db.timeEntry.count({
+      where: { ...mine, invoiceLineId: { not: null } }
+   });
+   return invoicedEntry ? invoiced : { ok: false, message: 'This entry no longer exists.' };
 }

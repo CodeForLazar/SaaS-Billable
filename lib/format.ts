@@ -30,8 +30,11 @@ export function formatWeekday(date: Date, timeZone?: string) {
    return formatIn(date, 'EEE, MMM d', timeZone);
 }
 
-/** -> "Sep 21 – 27, 2026", or "Sep 28 – Oct 4, 2026" across months (end = the last day shown). */
+/** -> "Sep 21 – 27, 2026", "Sep 28 – Oct 4, 2026" across months, "Sep 21, 2026" for one day. */
 export function formatDayRange(start: Date, end: Date, timeZone?: string) {
+   if (formatIn(start, 'yyyy-MM-dd', timeZone) === formatIn(end, 'yyyy-MM-dd', timeZone)) {
+      return formatIn(start, 'MMM d, yyyy', timeZone); // one day: "Sep 21, 2026"
+   }
    const sameMonth = formatIn(start, 'yyyy-MM', timeZone) === formatIn(end, 'yyyy-MM', timeZone);
    const sameYear = formatIn(start, 'yyyy', timeZone) === formatIn(end, 'yyyy', timeZone);
    const from = formatIn(start, sameYear ? 'MMM d' : 'MMM d, yyyy', timeZone);

@@ -16,12 +16,23 @@ type SendEmailOptions = {
    to: string;
    subject: string;
    react: ReactElement;
+   /** Where replies go (e.g. the business's own address), instead of MAIL_FROM. */
+   replyTo?: string | null;
+   attachments?: { filename: string; content: Buffer; contentType: string }[];
 };
 
-export async function sendEmail({ to, subject, react }: SendEmailOptions) {
+export async function sendEmail({ to, subject, react, replyTo, attachments }: SendEmailOptions) {
    const html = await render(react);
    // A plain-text version helps deliverability and is shown by clients that don't render HTML.
    const text = toPlainText(html);
 
-   await transporter.sendMail({ from: process.env.MAIL_FROM, to, subject, html, text });
+   await transporter.sendMail({
+      from: process.env.MAIL_FROM,
+      to,
+      subject,
+      html,
+      text,
+      replyTo: replyTo ?? undefined,
+      attachments
+   });
 }

@@ -19,7 +19,8 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 // Public pages with a variable part: the invitation page must open for people who aren't signed in yet.
-const PUBLIC_PREFIXES = ['/accept-invitation/'];
+// /i/<token>: the invoice page a client opens from the email (and its PDF), no account needed.
+const PUBLIC_PREFIXES = ['/accept-invitation/', '/i/'];
 
 export function proxy(request: NextRequest) {
    const { pathname } = request.nextUrl;

@@ -196,6 +196,7 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
                                  </p>
                               </div>
                               {!entry.billable && <Badge variant='outline'>Non-billable</Badge>}
+                              {entry.invoiceLineId && <Badge variant='secondary'>Invoiced</Badge>}
                               <span className='text-muted-foreground tabular-nums'>
                                  {formatTime(entry.startedAt, timeZone)}–
                                  {entry.endedAt && formatTime(entry.endedAt, timeZone)}
@@ -203,13 +204,18 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
                               <span className='w-12 text-right font-medium tabular-nums'>
                                  {formatDuration(entry.durationSec ?? 0)}
                               </span>
-                              <EntryActions
-                                 orgSlug={organization.slug}
-                                 entry={{
-                                    id: entry.id,
-                                    label: `${formatDuration(entry.durationSec ?? 0)} on ${entry.project.name} (${day.label})`
-                                 }}
-                              />
+                              {/* Invoiced time is locked; keep the column so rows line up */}
+                              {entry.invoiceLineId ? (
+                                 <span className='w-7' />
+                              ) : (
+                                 <EntryActions
+                                    orgSlug={organization.slug}
+                                    entry={{
+                                       id: entry.id,
+                                       label: `${formatDuration(entry.durationSec ?? 0)} on ${entry.project.name} (${day.label})`
+                                    }}
+                                 />
+                              )}
                            </li>
                         ))}
                      </ul>
