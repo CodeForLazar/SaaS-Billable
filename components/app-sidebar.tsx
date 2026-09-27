@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Contact, LayoutDashboard, Users } from 'lucide-react';
+import { Contact, FolderKanban, LayoutDashboard, Users } from 'lucide-react';
 import { NavUser } from '@/components/nav-user';
 import {
    Sidebar,
@@ -36,7 +36,8 @@ const navGroups = [
       label: 'Workspace',
       items: [
          { title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
-         { title: 'Clients', path: 'clients', icon: Contact }
+         { title: 'Clients', path: 'clients', icon: Contact },
+         { title: 'Projects', path: 'projects', icon: FolderKanban }
       ]
    },
    {

@@ -9,6 +9,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 const labels: Record<string, string> = {
    dashboard: 'Dashboard',
    clients: 'Clients',
+   projects: 'Projects',
    new: 'New',
    edit: 'Edit',
    settings: 'Settings',

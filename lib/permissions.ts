@@ -17,15 +17,18 @@ import {
 
 const statements = {
    ...defaultStatements, // organization, member, invitation, team, ac (Better Auth's resources)
-   client: ['create', 'update', 'archive']
+   client: ['create', 'update', 'archive'],
+   project: ['create', 'update', 'archive']
 } as const;
 
 export const ac = createAccessControl(statements);
 
+const manage = ['create', 'update', 'archive'] as const;
+
 export const roles = {
-   owner: ac.newRole({ ...ownerAc.statements, client: ['create', 'update', 'archive'] }),
-   admin: ac.newRole({ ...adminAc.statements, client: ['create', 'update', 'archive'] }),
-   member: ac.newRole({ ...memberAc.statements, client: [] })
+   owner: ac.newRole({ ...ownerAc.statements, client: manage, project: manage }),
+   admin: ac.newRole({ ...adminAc.statements, client: manage, project: manage }),
+   member: ac.newRole({ ...memberAc.statements, client: [], project: [] })
 };
 
 type RoleName = keyof typeof roles;

@@ -1,9 +1,10 @@
 'use server';
 
+import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { clientSchema } from '@/lib/validations/client';
-import { type ClientResult, createClient, updateClient } from '@/server/clients';
+import { type ClientResult, createClient, setClientArchived, updateClient } from '@/server/clients';
 
 const FIELDS = ['name', 'company', 'email', 'address', 'notes'] as const;
 type ClientField = (typeof FIELDS)[number];
@@ -66,4 +67,20 @@ export async function updateClientAction(
    }
 
    return finish(await updateClient(orgSlug, clientId, parsed.data), values);
+}
+
+// Called from a button's click handler (not a form), with plain arguments: validated here.
+export async function setClientArchivedAction(
+   orgSlug: string,
+   clientId: string,
+   archived: boolean
+): Promise<ClientResult> {
+   const parsed = z
+      .object({ clientId: z.string().min(1).max(100), archived: z.boolean() })
+      .safeParse({ clientId, archived });
+   if (!parsed.success) return { ok: false, message: 'Invalid request.' };
+
+   const result = await setClientArchived(orgSlug, parsed.data.clientId, parsed.data.archived);
+   if (result.ok) refresh(); // re-render the client page with its new state
+   return result;
 }

@@ -1,12 +1,26 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, FolderKanban, Pencil, Plus } from 'lucide-react';
+import { ArchiveButton } from '@/components/archive-button';
+import { ColorDot } from '@/components/color-dot';
+import { Detail, DetailList } from '@/components/detail-list';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
+import {
+   Table,
+   TableBody,
+   TableCell,
+   TableHead,
+   TableHeader,
+   TableRow
+} from '@/components/ui/table';
 import { formatDate } from '@/lib/format';
+import { formatMoney } from '@/lib/money';
 import { can } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { getClient } from '@/server/clients';
+import { listClientProjects } from '@/server/projects';
+import { setClientArchivedAction } from '../actions';
 
 export async function generateMetadata({
    params
@@ -21,38 +35,58 @@ export default async function ClientPage({ params }: PageProps<'/[orgSlug]/clien
    // 404 (inside the app shell, [orgSlug]/not-found.tsx) if the client doesn't exist or belongs
    // to another workspace.
    const { organization, role, client } = await getClient(orgSlug, clientId);
+   const projects = await listClientProjects(orgSlug, client.id);
+   const activeProjects = projects.filter((project) => !project.archivedAt).length;
+
    const clientsPath = `/${organization.slug}/clients`;
+   const projectsPath = `/${organization.slug}/projects`;
+   const archived = !!client.archivedAt;
+   const canAddProject = !archived && can(role, { project: ['create'] });
 
    return (
       <div className='flex w-full max-w-3xl flex-1 flex-col gap-6 p-6'>
          <Link
-            href={clientsPath}
+            href={archived ? `${clientsPath}?status=archived` : clientsPath}
             className='flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground'
          >
             <ArrowLeft className='size-4' aria-hidden='true' />
-            All clients
+            {archived ? 'Archived clients' : 'All clients'}
          </Link>
 
          <div className='flex flex-wrap items-start justify-between gap-4'>
             <div className='min-w-0'>
                <div className='flex items-center gap-2'>
                   <h1 className='text-2xl font-semibold break-words'>{client.name}</h1>
-                  {client.archivedAt && <Badge variant='secondary'>Archived</Badge>}
+                  {archived && <Badge variant='secondary'>Archived</Badge>}
                </div>
                {client.company && <p className='text-muted-foreground'>{client.company}</p>}
             </div>
-            {can(role, { client: ['update'] }) && (
-               <Link
-                  href={`${clientsPath}/${client.id}/edit`}
-                  className={cn(buttonVariants({ variant: 'outline' }))}
-               >
-                  <Pencil aria-hidden='true' />
-                  Edit
-               </Link>
-            )}
+            <div className='flex gap-2'>
+               {can(role, { client: ['update'] }) && (
+                  <Link
+                     href={`${clientsPath}/${client.id}/edit`}
+                     className={cn(buttonVariants({ variant: 'outline' }))}
+                  >
+                     <Pencil aria-hidden='true' />
+                     Edit
+                  </Link>
+               )}
+               {can(role, { client: ['archive'] }) && (
+                  <ArchiveButton
+                     action={setClientArchivedAction.bind(null, organization.slug, client.id)}
+                     name={client.name}
+                     archived={archived}
+                     description={`The client is hidden from your lists${
+                        activeProjects > 0
+                           ? `, and its ${activeProjects} active ${activeProjects === 1 ? 'project is' : 'projects are'} archived too`
+                           : ''
+                     }. Nothing is deleted: restoring the client brings them back.`}
+                  />
+               )}
+            </div>
          </div>
 
-         <dl className='flex flex-col gap-4 rounded-lg border p-6 text-sm'>
+         <DetailList>
             <Detail label='Email'>
                {client.email ? (
                   <a
@@ -73,25 +107,64 @@ export default async function ClientPage({ params }: PageProps<'/[orgSlug]/clien
                {client.notes ?? '—'}
             </Detail>
             <Detail label='Added'>{formatDate(client.createdAt)}</Detail>
-         </dl>
-      </div>
-   );
-}
+            {client.archivedAt && <Detail label='Archived'>{formatDate(client.archivedAt)}</Detail>}
+         </DetailList>
 
-// One label/value row: stacked on phones, side by side from sm up.
-function Detail({
-   label,
-   className,
-   children
-}: {
-   label: string;
-   className?: string;
-   children: React.ReactNode;
-}) {
-   return (
-      <div className='grid gap-1 sm:grid-cols-[10rem_1fr] sm:gap-6'>
-         <dt className='text-muted-foreground'>{label}</dt>
-         <dd className={className}>{children}</dd>
+         <section aria-labelledby='projects-heading' className='flex flex-col gap-4'>
+            <div className='flex items-center justify-between gap-4'>
+               <h2 id='projects-heading' className='text-lg font-semibold'>
+                  Projects
+               </h2>
+               {canAddProject && (
+                  <Link
+                     href={`${projectsPath}/new?clientId=${client.id}`}
+                     className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                  >
+                     <Plus aria-hidden='true' />
+                     New project
+                  </Link>
+               )}
+            </div>
+
+            {projects.length === 0 ? (
+               <div className='flex flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center'>
+                  <FolderKanban className='size-6 text-muted-foreground' aria-hidden='true' />
+                  <p className='text-sm text-muted-foreground'>No projects for this client yet.</p>
+               </div>
+            ) : (
+               <Table>
+                  <TableHeader>
+                     <TableRow>
+                        <TableHead>Project</TableHead>
+                        <TableHead className='text-right'>Hourly rate</TableHead>
+                     </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                     {projects.map((project) => (
+                        <TableRow key={project.id}>
+                           <TableCell>
+                              <div className='flex items-center gap-2'>
+                                 <ColorDot color={project.color} />
+                                 <Link
+                                    href={`${projectsPath}/${project.id}`}
+                                    className='font-medium underline-offset-4 hover:underline'
+                                 >
+                                    {project.name}
+                                 </Link>
+                                 {project.archivedAt && <Badge variant='secondary'>Archived</Badge>}
+                              </div>
+                           </TableCell>
+                           <TableCell className='text-right tabular-nums'>
+                              {project.hourlyRateCents === null
+                                 ? '—'
+                                 : formatMoney(project.hourlyRateCents)}
+                           </TableCell>
+                        </TableRow>
+                     ))}
+                  </TableBody>
+               </Table>
+            )}
+         </section>
       </div>
    );
 }
