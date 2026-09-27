@@ -1,0 +1,81 @@
+# Runs on every push to main and on every pull request. Two jobs in parallel:
+# - checks: formatting, lint, types, unit tests and a production build
+# - database: all migrations on an empty Postgres, schema drift, and the demo seed
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch cancels the run that's still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install (also generates the Prisma client)
+        run: npm ci
+      - name: Formatting
+        run: npm run format:check
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          # Better Auth refuses its default secret when building for production. This build is
+          # only checked, never deployed, so placeholders are enough (no real secrets in CI).
+          BETTER_AUTH_SECRET: ci-build-only-placeholder-not-a-real-secret
+          BETTER_AUTH_URL: http://localhost:3000
+
+  database:
+    name: Migrations and seed
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine # the same image as docker-compose.yml
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: saas_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/saas_app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Apply every migration to an empty database
+        run: npx prisma migrate deploy
+      - name: Fail if the schema has changes without a migration
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code
+      - name: Seed the demo workspace
+        run: npm run db:seed
