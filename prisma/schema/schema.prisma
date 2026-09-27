@@ -3,8 +3,10 @@
 // Prisma reads every .prisma file in prisma/schema/ as one schema.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../../lib/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../../lib/generated/prisma"
+  // Partial indexes (a unique index with a WHERE clause), used for "one running timer per user"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
