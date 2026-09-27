@@ -11,6 +11,7 @@ const labels: Record<string, string> = {
    clients: 'Clients',
    projects: 'Projects',
    time: 'Time',
+   week: 'Week',
    new: 'New',
    edit: 'Edit',
    settings: 'Settings',

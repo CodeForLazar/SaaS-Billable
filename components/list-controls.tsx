@@ -1,6 +1,7 @@
 import Form from 'next/form';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
+import { LinkTabs } from '@/components/link-tabs';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -17,24 +18,14 @@ export function StatusTabs({ basePath, query }: { basePath: string; query: ListQ
    ] as const;
 
    return (
-      <nav aria-label='Filter by status' className='flex w-fit gap-1 rounded-lg bg-muted p-1'>
-         {tabs.map((tab) => {
-            const current = query.status === tab.status;
-            return (
-               <Link
-                  key={tab.status}
-                  href={listHref(basePath, query, { status: tab.status, page: 1 })}
-                  aria-current={current ? 'page' : undefined}
-                  className={cn(
-                     'rounded-md px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
-                     current && 'bg-background text-foreground shadow-sm'
-                  )}
-               >
-                  {tab.label}
-               </Link>
-            );
-         })}
-      </nav>
+      <LinkTabs
+         label='Filter by status'
+         tabs={tabs.map((tab) => ({
+            href: listHref(basePath, query, { status: tab.status, page: 1 }),
+            label: tab.label,
+            current: query.status === tab.status
+         }))}
+      />
    );
 }
 

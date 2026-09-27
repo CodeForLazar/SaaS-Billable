@@ -17,7 +17,7 @@ export type StartTimerInput = z.infer<typeof startTimerSchema>;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/; // "09:05", 24-hour, what <input type="time"> sends
 
 /** "2026-09-26" that is a real calendar day (not 2026-02-30) in a sane range. */
-function isCalendarDate(value: string) {
+export function isCalendarDate(value: string) {
    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
    const [year, month, day] = value.split('-').map(Number);
    const date = new Date(Date.UTC(year, month - 1, day));
@@ -44,3 +44,9 @@ export const timeEntrySchema = z
    });
 
 export type TimeEntryInput = z.infer<typeof timeEntrySchema>;
+
+// ?week=2026-09-21 on the weekly timesheet: any day of the wanted week (the page moves it to
+// Monday). From the URL, so junk falls back to "this week" instead of erroring.
+export const weekQuerySchema = z.object({
+   week: z.string().refine(isCalendarDate).optional().catch(undefined)
+});

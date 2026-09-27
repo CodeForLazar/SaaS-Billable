@@ -6,7 +6,7 @@ import { format, formatDistanceStrict } from 'date-fns';
 // zone, date-fns uses the server's own zone.
 
 /** date-fns `format` in `timeZone` (via the `in` context option, date-fns 4). */
-function formatIn(date: Date, pattern: string, timeZone?: string) {
+export function formatIn(date: Date, pattern: string, timeZone?: string) {
    return format(date, pattern, timeZone ? { in: tz(timeZone) } : undefined);
 }
 
@@ -28,6 +28,15 @@ export function dayKey(date: Date, timeZone?: string) {
 /** -> "Mon, Sep 22" */
 export function formatWeekday(date: Date, timeZone?: string) {
    return formatIn(date, 'EEE, MMM d', timeZone);
+}
+
+/** -> "Sep 21 – 27, 2026", or "Sep 28 – Oct 4, 2026" across months (end = the last day shown). */
+export function formatDayRange(start: Date, end: Date, timeZone?: string) {
+   const sameMonth = formatIn(start, 'yyyy-MM', timeZone) === formatIn(end, 'yyyy-MM', timeZone);
+   const sameYear = formatIn(start, 'yyyy', timeZone) === formatIn(end, 'yyyy', timeZone);
+   const from = formatIn(start, sameYear ? 'MMM d' : 'MMM d, yyyy', timeZone);
+   const to = formatIn(end, sameMonth ? 'd, yyyy' : 'MMM d, yyyy', timeZone);
+   return `${from} – ${to}`;
 }
 
 /** 3725 -> "1:02" (hours:minutes), or "1:02:05" with seconds (the running timer). */

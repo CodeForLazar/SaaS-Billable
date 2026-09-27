@@ -153,6 +153,32 @@ export async function listMyRecentEntries(orgSlug: string, timeZone: string) {
 }
 
 /**
+ * The signed-in user's finished entries in this workspace that START in [from, to) (UTC instants,
+ * e.g. Monday 00:00 to the next Monday 00:00 on the user's clock), for the weekly timesheet.
+ * An entry belongs to the day it started on (a timer running past midnight counts for that day).
+ */
+export async function listMyEntriesBetween(orgSlug: string, from: Date, to: Date) {
+   const { session, organization } = await requireMembership(orgSlug);
+   return db.timeEntry.findMany({
+      where: {
+         organizationId: organization.id,
+         userId: session.user.id,
+         endedAt: { not: null },
+         startedAt: { gte: from, lt: to }
+      },
+      orderBy: [{ startedAt: 'asc' }, { id: 'asc' }],
+      select: {
+         startedAt: true,
+         durationSec: true,
+         billable: true,
+         project: {
+            select: { id: true, name: true, color: true, client: { select: { name: true } } }
+         }
+      }
+   });
+}
+
+/**
  * Projects to pick from (timer, manual entry): the active ones, sorted by client then project,
  * plus `includeId` even if archived, so an entry's current project still shows up when editing.
  */

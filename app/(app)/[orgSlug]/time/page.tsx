@@ -21,6 +21,7 @@ import { EntryActions } from './entry-actions';
 import { EntryForm } from './entry-form';
 import { groupProjects } from './group-projects';
 import { StartTimerForm } from './start-timer-form';
+import { TimeTabs } from './time-tabs';
 
 export async function generateMetadata({
    params
@@ -69,9 +70,12 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
 
    return (
       <div className='flex w-full max-w-5xl flex-1 flex-col gap-6 p-6'>
-         <div>
-            <h1 className='text-2xl font-semibold'>Time</h1>
-            <p className='text-muted-foreground'>Track the time you spend on your projects.</p>
+         <div className='flex flex-wrap items-start justify-between gap-4'>
+            <div>
+               <h1 className='text-2xl font-semibold'>Time</h1>
+               <p className='text-muted-foreground'>Track the time you spend on your projects.</p>
+            </div>
+            <TimeTabs orgSlug={organization.slug} current='entries' />
          </div>
 
          <Card>
