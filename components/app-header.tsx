@@ -8,6 +8,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 // URL segment -> label. Unknown segments (e.g. record ids later) are left out of the trail.
 const labels: Record<string, string> = {
    dashboard: 'Dashboard',
+   clients: 'Clients',
    settings: 'Settings',
    members: 'Members'
 };

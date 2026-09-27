@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users } from 'lucide-react';
+import { Contact, LayoutDashboard, Users } from 'lucide-react';
 import { NavUser } from '@/components/nav-user';
 import {
    Sidebar,
@@ -34,7 +34,10 @@ type Props = {
 const navGroups = [
    {
       label: 'Workspace',
-      items: [{ title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard }]
+      items: [
+         { title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
+         { title: 'Clients', path: 'clients', icon: Contact }
+      ]
    },
    {
       label: 'Settings',

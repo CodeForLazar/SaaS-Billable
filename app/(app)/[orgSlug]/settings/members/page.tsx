@@ -9,6 +9,7 @@ import {
    TableHeader,
    TableRow
 } from '@/components/ui/table';
+import { formatDate } from '@/lib/format';
 import { getMembersOverview } from '@/server/members';
 import { requireMembership } from '@/server/organizations';
 import { inviteMemberAction } from './actions';
@@ -24,10 +25,6 @@ export async function generateMetadata({
 }
 
 const roleBadge = { owner: 'default', admin: 'secondary', member: 'outline' } as const;
-
-// A server component renders the date, so there's no server/browser timezone mismatch.
-const formatDate = (date: Date) =>
-   new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(date);
 
 export default async function MembersPage({ params }: PageProps<'/[orgSlug]/settings/members'>) {
    const { orgSlug } = await params;
