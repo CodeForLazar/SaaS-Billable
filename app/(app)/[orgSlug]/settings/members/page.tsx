@@ -47,9 +47,11 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                <TableHeader>
                   <TableRow>
                      <TableHead>Name</TableHead>
-                     <TableHead>Email</TableHead>
+                     {/* Phones: fewer columns (email moves under the name), so the table fits the
+                         screen instead of scrolling sideways and hiding the ⋯ menu. */}
+                     <TableHead className='hidden sm:table-cell'>Email</TableHead>
                      <TableHead>Role</TableHead>
-                     <TableHead className='text-right'>Joined</TableHead>
+                     <TableHead className='hidden text-right sm:table-cell'>Joined</TableHead>
                      <TableHead className='w-10'>
                         <span className='sr-only'>Actions</span>
                      </TableHead>
@@ -61,8 +63,13 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                         <TableCell className='font-medium'>
                            {member.user.name}
                            {member.isMe && <span className='text-muted-foreground'> (you)</span>}
+                           <div className='text-xs font-normal text-muted-foreground sm:hidden'>
+                              {member.user.email}
+                           </div>
                         </TableCell>
-                        <TableCell className='text-muted-foreground'>{member.user.email}</TableCell>
+                        <TableCell className='hidden text-muted-foreground sm:table-cell'>
+                           {member.user.email}
+                        </TableCell>
                         <TableCell>
                            <div className='flex gap-1'>
                               {member.role.split(',').map((role) => (
@@ -77,7 +84,7 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                               ))}
                            </div>
                         </TableCell>
-                        <TableCell className='text-right text-muted-foreground'>
+                        <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
                            {formatDate(member.createdAt)}
                         </TableCell>
                         <TableCell>
@@ -122,8 +129,10 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                         <TableRow>
                            <TableHead>Email</TableHead>
                            <TableHead>Role</TableHead>
-                           <TableHead>Invited by</TableHead>
-                           <TableHead className='text-right'>Expires</TableHead>
+                           <TableHead className='hidden sm:table-cell'>Invited by</TableHead>
+                           <TableHead className='hidden text-right sm:table-cell'>
+                              Expires
+                           </TableHead>
                            {canCancelInvitations && (
                               <TableHead className='w-10'>
                                  <span className='sr-only'>Actions</span>
@@ -138,10 +147,10 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                               <TableCell>
                                  <Badge variant='outline'>{invitation.role ?? 'member'}</Badge>
                               </TableCell>
-                              <TableCell className='text-muted-foreground'>
+                              <TableCell className='hidden text-muted-foreground sm:table-cell'>
                                  {invitation.user.name}
                               </TableCell>
-                              <TableCell className='text-right text-muted-foreground'>
+                              <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
                                  {formatDate(invitation.expiresAt)}
                               </TableCell>
                               {canCancelInvitations && (
