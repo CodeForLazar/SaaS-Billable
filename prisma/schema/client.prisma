@@ -1,0 +1,26 @@
+// A customer of the workspace: the person or company that gets invoiced.
+// Clients are archived, not deleted, because projects, time and invoices refer to them.
+model Client {
+  id             String       @id @default(cuid(2))
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name    String
+  email   String? // where invoices are sent
+  company String?
+  address String? // free text, printed on invoices
+  notes   String?
+
+  archivedAt DateTime? // null = active
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  projects Project[]
+
+  // Lets Project point at (id, organizationId) together, so the database itself guarantees a
+  // project's client belongs to the same workspace (see project.prisma).
+  @@unique([id, organizationId])
+  @@index([organizationId, archivedAt]) // "active clients of this workspace"
+  @@index([organizationId, name]) // sorting and searching by name
+  @@map("client")
+}

@@ -1,0 +1,24 @@
+// Work done for a client. Time entries (Phase 4) and invoice lines (Phase 5) hang off projects.
+model Project {
+  id             String       @id @default(cuid(2))
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  clientId String
+  // Composite foreign key: (clientId, organizationId) must match a client in the SAME workspace,
+  // so a bug can never attach one tenant's project to another tenant's client.
+  // Restrict: a client that still has projects can't be deleted (archive it instead).
+  client   Client @relation(fields: [clientId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  name            String
+  hourlyRateCents Int? // money is stored in cents (12500 = 125.00); null = no rate set yet
+  color           String? // a label color for the UI, e.g. "#10b981"
+
+  archivedAt DateTime? // null = active
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([organizationId, archivedAt])
+  @@index([clientId])
+  @@map("project")
+}
