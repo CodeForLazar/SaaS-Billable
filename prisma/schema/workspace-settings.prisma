@@ -1,0 +1,22 @@
+// A workspace's billing settings: who invoices are from, the currency and the invoice numbering.
+// Its own table (one row per workspace) rather than columns on Better Auth's Organization model,
+// which Better Auth's CLI owns and rewrites. Created on the first save; until then the defaults in
+// server/settings.ts apply.
+model WorkspaceSettings {
+  organizationId String       @id
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  currency        String  @default("USD") // ISO 4217; each invoice copies it when created
+  businessName    String? // "From" on invoices; the workspace name when empty
+  businessEmail   String?
+  businessAddress String?
+
+  invoicePrefix      String @default("INV-")
+  nextInvoiceNumber  Int    @default(1) // the number the next SENT invoice gets
+  paymentTermsDays   Int    @default(14) // due date = issue date + this
+  taxRateBasisPoints Int    @default(0) // default tax for new invoices; 2000 = 20.00 %
+
+  updatedAt DateTime @updatedAt
+
+  @@map("workspace_settings")
+}

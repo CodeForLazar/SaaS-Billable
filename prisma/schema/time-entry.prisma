@@ -19,6 +19,11 @@ model TimeEntry {
   durationSec Int? // endedAt - startedAt in seconds, stored so reports can simply SUM it; null while running
   billable    Boolean   @default(true)
 
+  // Set once the time is on an invoice line: then it's "billed" and can't be edited or deleted.
+  // SetNull: deleting the line (or its draft invoice) makes the time unbilled again.
+  invoiceLineId String?
+  invoiceLine   InvoiceLine? @relation(fields: [invoiceLineId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -30,5 +35,6 @@ model TimeEntry {
   @@index([organizationId, startedAt]) // a workspace's time in a date range (timesheet, reports)
   @@index([userId, startedAt]) // one person's time
   @@index([projectId])
+  @@index([invoiceLineId])
   @@map("time_entry")
 }

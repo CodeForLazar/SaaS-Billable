@@ -1,0 +1,81 @@
+// DRAFT -> SENT -> PAID, or SENT -> VOID. A draft can be deleted; a sent invoice can't (void it).
+// "Overdue" is not a status: it's SENT with a due date in the past, computed when shown.
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  VOID
+}
+
+model Invoice {
+  id             String       @id @default(cuid(2))
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  clientId String
+  // Composite FK: the client must be in the same workspace. Restrict: invoiced clients stay.
+  client   Client @relation(fields: [clientId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  status InvoiceStatus @default(DRAFT)
+  // "INV-0007". Given when the invoice is SENT, not when the draft is created, so deleted drafts
+  // never leave gaps in the numbering of issued invoices.
+  number String?
+
+  currency           String // copied from the workspace settings when the draft is created
+  issueDate          DateTime? @db.Date // calendar dates (no time of day), set when sent
+  dueDate            DateTime? @db.Date
+  paymentTermsDays   Int
+  taxRateBasisPoints Int       @default(0) // 2000 = 20.00 %
+  notes              String? // printed on the invoice (payment instructions, thanks, ...)
+
+  // Kept in sync with the lines on every change (server/invoices.ts recalculates them).
+  subtotalCents Int @default(0)
+  taxCents      Int @default(0)
+  totalCents    Int @default(0)
+
+  // Snapshots taken when sent: an issued invoice must not change when the client's or the
+  // business's details are edited later.
+  fromName      String?
+  fromEmail     String?
+  fromAddress   String?
+  billToName    String?
+  billToEmail   String?
+  billToAddress String?
+
+  publicToken String?   @unique // the secret in the client's link (/i/<token>), set when sent
+  sentAt      DateTime?
+  paidAt      DateTime?
+  voidedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  lines InvoiceLine[]
+
+  @@unique([id, organizationId]) // for the composite FK from InvoiceLine
+  @@unique([organizationId, number]) // numbers are unique per workspace (NULLs don't clash)
+  @@index([organizationId, status])
+  @@index([clientId])
+  @@map("invoice")
+}
+
+model InvoiceLine {
+  id             String  @id @default(cuid(2))
+  organizationId String
+  invoiceId      String
+  invoice        Invoice @relation(fields: [invoiceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  position           Int // order on the invoice
+  description        String
+  quantityHundredths Int // 650 = 6.50 (hours, or units for manual lines); integers like cents
+  unitPriceCents     Int
+  amountCents        Int // round(quantity × unit price), stored so totals are a plain SUM
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // The time this line bills. Deleting the line (or its draft) makes that time unbilled again.
+  timeEntries TimeEntry[]
+
+  @@index([invoiceId, position])
+  @@map("invoice_line")
+}

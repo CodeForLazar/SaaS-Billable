@@ -16,6 +16,7 @@ model Client {
   updatedAt  DateTime  @updatedAt
 
   projects Project[]
+  invoices Invoice[]
 
   // Lets Project point at (id, organizationId) together, so the database itself guarantees a
   // project's client belongs to the same workspace (see project.prisma).

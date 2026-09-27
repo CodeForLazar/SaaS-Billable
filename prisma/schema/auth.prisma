@@ -89,10 +89,12 @@ model Organization {
   members     Member[]
   invitations Invitation[]
 
-  // Added by us: relations to our own models (client.prisma, project.prisma, time-entry.prisma)
+  // Added by us: relations to our own models (client.prisma, project.prisma, time-entry.prisma, invoice.prisma, ...)
   clients     Client[]
   projects    Project[]
   timeEntries TimeEntry[]
+  invoices    Invoice[]
+  settings    WorkspaceSettings?
 
   @@unique([slug])
   @@map("organization")
