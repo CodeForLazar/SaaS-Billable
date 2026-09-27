@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ColorDot } from '@/components/color-dot';
 import {
    Card,
    CardAction,
@@ -23,6 +22,8 @@ import { formatMoney } from '@/lib/money';
 import { getTimeZone } from '@/lib/time-zone';
 import { getDashboard } from '@/server/dashboard';
 import { requireMembership } from '@/server/organizations';
+import { HoursChart, type ProjectHours } from './hours-chart';
+import { RevenueChart, type RevenueMonth } from './revenue-chart';
 
 // params is a Promise in Next.js 16. requireMembership is cached, so calling it here and in
 // the page costs one database lookup.
@@ -78,6 +79,26 @@ export default async function DashboardPage({ params }: PageProps<'/[orgSlug]/da
    const slug = organization.slug;
    const monthName = formatIn(hours.monthStart, 'MMMM', timeZone);
    const who = finances ? 'Team' : 'Your';
+
+   // Chart data, prepared here: labels in the user's time zone, plain numbers and strings only
+   // (props passed to a Client Component must be serializable, like JSON in an API response).
+   const revenueData: RevenueMonth[] =
+      money?.revenue.map((row) => ({
+         key: formatIn(row.month, 'yyyy-MM', timeZone),
+         label: formatIn(row.month, 'MMM', timeZone),
+         title: formatIn(row.month, 'MMMM yyyy', timeZone),
+         cents: row.cents,
+         count: row.count
+      })) ?? [];
+   const revenueTotal = money?.revenue.reduce((sum, row) => sum + row.cents, 0) ?? 0;
+   const paidCount = money?.revenue.reduce((sum, row) => sum + row.count, 0) ?? 0;
+   const hoursData: ProjectHours[] = hours.perProject.map((row) => ({
+      key: row.project.id,
+      name: row.project.name,
+      client: row.project.client.name,
+      billable: row.billableSeconds / 3600,
+      nonBillable: (row.seconds - row.billableSeconds) / 3600
+   }));
 
    return (
       <div className='flex w-full max-w-6xl flex-1 flex-col gap-6 p-6'>
@@ -147,12 +168,22 @@ export default async function DashboardPage({ params }: PageProps<'/[orgSlug]/da
                   <CardHeader>
                      <CardTitle>Revenue per month</CardTitle>
                      <CardDescription>
-                        Invoices paid in the last {money.revenue.length} months, by the day they
-                        were paid.
+                        {formatMoney(revenueTotal, money.currency)} from{' '}
+                        {plural(paidCount, 'paid invoice')} in the last {money.revenue.length}{' '}
+                        months.
                      </CardDescription>
                   </CardHeader>
                   <CardContent>
-                     <Table>
+                     {paidCount === 0 ? (
+                        <p className='text-sm text-muted-foreground'>
+                           Paid invoices show up here, in the month they were paid.
+                        </p>
+                     ) : (
+                        <RevenueChart data={revenueData} currency={money.currency} />
+                     )}
+                     {/* The same numbers as a table for screen readers (charts are pictures). */}
+                     <Table className='sr-only'>
+                        <caption>Revenue per month</caption>
                         <TableHeader>
                            <TableRow>
                               <TableHead>Month</TableHead>
@@ -163,7 +194,7 @@ export default async function DashboardPage({ params }: PageProps<'/[orgSlug]/da
                         <TableBody>
                            {money.revenue.toReversed().map((row) => (
                               <TableRow key={row.month.toISOString()}>
-                                 <TableCell>{formatIn(row.month, 'MMM yyyy', timeZone)}</TableCell>
+                                 <TableCell>{formatIn(row.month, 'MMMM yyyy', timeZone)}</TableCell>
                                  <TableCell className='text-right tabular-nums'>
                                     {row.count}
                                  </TableCell>
@@ -211,38 +242,34 @@ export default async function DashboardPage({ params }: PageProps<'/[orgSlug]/da
                         </Link>
                      </p>
                   ) : (
-                     <Table>
-                        <TableHeader>
-                           <TableRow>
-                              <TableHead>Project</TableHead>
-                              <TableHead className='hidden text-right sm:table-cell'>
-                                 Billable
-                              </TableHead>
-                              <TableHead className='text-right'>Hours</TableHead>
-                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                           {hours.perProject.map(({ project, seconds, billableSeconds }) => (
-                              <TableRow key={project.id}>
-                                 <TableCell className='whitespace-normal'>
-                                    <span className='flex items-center gap-2 font-medium'>
-                                       <ColorDot color={project.color} />
-                                       {project.name}
-                                    </span>
-                                    <span className='text-muted-foreground'>
-                                       {project.client.name}
-                                    </span>
-                                 </TableCell>
-                                 <TableCell className='hidden text-right tabular-nums sm:table-cell'>
-                                    {formatDuration(billableSeconds)}
-                                 </TableCell>
-                                 <TableCell className='text-right tabular-nums'>
-                                    {formatDuration(seconds)}
-                                 </TableCell>
+                     <>
+                        <HoursChart data={hoursData} />
+                        <Table className='sr-only'>
+                           <caption>Hours per project</caption>
+                           <TableHeader>
+                              <TableRow>
+                                 <TableHead>Project</TableHead>
+                                 <TableHead className='text-right'>Billable</TableHead>
+                                 <TableHead className='text-right'>Hours</TableHead>
                               </TableRow>
-                           ))}
-                        </TableBody>
-                     </Table>
+                           </TableHeader>
+                           <TableBody>
+                              {hours.perProject.map(({ project, seconds, billableSeconds }) => (
+                                 <TableRow key={project.id}>
+                                    <TableCell>
+                                       {project.name} ({project.client.name})
+                                    </TableCell>
+                                    <TableCell className='text-right tabular-nums'>
+                                       {formatDuration(billableSeconds)}
+                                    </TableCell>
+                                    <TableCell className='text-right tabular-nums'>
+                                       {formatDuration(seconds)}
+                                    </TableCell>
+                                 </TableRow>
+                              ))}
+                           </TableBody>
+                        </Table>
+                     </>
                   )}
                </CardContent>
             </Card>
