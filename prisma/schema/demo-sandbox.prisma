@@ -1,0 +1,14 @@
+// A workspace created by "Try the demo": one per visitor, seeded with demo data (lib/demo-seed.ts)
+// and deleted with its users once it expires (server/demo.ts). Demo workspaces send no email.
+model DemoSandbox {
+  organizationId String       @id
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  key       String   @unique // the demo users' email prefix: <key>@example.com, <key>-sam@...
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@map("demo_sandbox")
+}

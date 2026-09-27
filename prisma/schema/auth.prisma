@@ -95,6 +95,7 @@ model Organization {
   timeEntries TimeEntry[]
   invoices    Invoice[]
   settings    WorkspaceSettings?
+  demoSandbox DemoSandbox?
 
   @@unique([slug])
   @@map("organization")
