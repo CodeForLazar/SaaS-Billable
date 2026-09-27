@@ -37,6 +37,12 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm test
+      # Again with the server in another time zone: date code must not depend on it (Vercel and
+      # CI run in UTC, a laptop doesn't). This caught zonedToUtc picking a different autumn hour.
+      - name: Unit tests (server in New York time)
+        run: npm test
+        env:
+          TZ: America/New_York
       - name: Build
         run: npm run build
         env:
