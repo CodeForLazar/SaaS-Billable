@@ -17,9 +17,10 @@ import { formatMoney } from '@/lib/money';
 import { can } from '@/lib/permissions';
 import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
-import { listQuerySchema } from '@/lib/validations/list';
+import { listHref, listQuerySchema } from '@/lib/validations/list';
 import { requireMembership } from '@/server/organizations';
 import { listProjects } from '@/server/projects';
+import { getWorkspaceSettings } from '@/server/settings';
 
 export async function generateMetadata({
    params
@@ -41,6 +42,7 @@ export default async function ProjectsPage({
    );
    const basePath = `/${organization.slug}/projects`;
    const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
+   const { currency } = await getWorkspaceSettings(orgSlug);
    const clientsPath = `/${organization.slug}/clients`;
    const canCreate = can(role, { project: ['create'] });
    const archived = query.status === 'archived';
@@ -144,7 +146,7 @@ export default async function ProjectsPage({
                            <TableCell className='text-right tabular-nums'>
                               {project.hourlyRateCents === null
                                  ? '—'
-                                 : formatMoney(project.hourlyRateCents)}
+                                 : formatMoney(project.hourlyRateCents, currency)}
                            </TableCell>
                            <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
                               {formatDate(project.archivedAt ?? project.createdAt, timeZone)}
@@ -155,8 +157,7 @@ export default async function ProjectsPage({
                </Table>
 
                <ListPagination
-                  basePath={basePath}
-                  query={query}
+                  pageHref={(target) => listHref(basePath, query, { page: target })}
                   page={page}
                   pageCount={pageCount}
                   pageSize={pageSize}

@@ -12,6 +12,7 @@ import { can } from '@/lib/permissions';
 import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { getProject } from '@/server/projects';
+import { getWorkspaceSettings } from '@/server/settings';
 import { setProjectArchivedAction } from '../actions';
 
 export async function generateMetadata({
@@ -30,6 +31,7 @@ export default async function ProjectPage({
    const { organization, role, project } = await getProject(orgSlug, projectId);
    const projectsPath = `/${organization.slug}/projects`;
    const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
+   const { currency } = await getWorkspaceSettings(orgSlug);
    const archived = !!project.archivedAt;
 
    return (
@@ -87,7 +89,7 @@ export default async function ProjectPage({
             <Detail label='Hourly rate'>
                {project.hourlyRateCents === null
                   ? 'Not set'
-                  : `${formatMoney(project.hourlyRateCents)} per hour`}
+                  : `${formatMoney(project.hourlyRateCents, currency)} per hour`}
             </Detail>
             <Detail label='Added'>{formatDate(project.createdAt, timeZone)}</Detail>
             {project.archivedAt && (

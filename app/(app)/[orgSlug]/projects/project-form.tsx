@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState } from 'react';
 import { toFieldErrors } from '@/app/(auth)/_components/to-field-errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MoneyInput } from '@/components/money-input';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
    Field,
@@ -22,7 +23,6 @@ import {
    SelectTrigger,
    SelectValue
 } from '@/components/ui/select';
-import { DEFAULT_CURRENCY } from '@/lib/money';
 import { PROJECT_COLORS } from '@/lib/project-colors';
 import { cn } from '@/lib/utils';
 import type { ProjectFormState, ProjectValues } from './actions';
@@ -36,9 +36,12 @@ export function ProjectForm({
    clients,
    defaultValues,
    submitLabel,
-   cancelHref
+   cancelHref,
+   currency
 }: {
    action: ProjectAction;
+   /** The workspace's currency (billing settings), shown with the rate. */
+   currency: string;
    clients: { value: string; label: string }[];
    defaultValues: ProjectValues;
    submitLabel: string;
@@ -96,27 +99,18 @@ export function ProjectForm({
 
                <Field data-invalid={!!errors?.hourlyRate}>
                   <FieldLabel htmlFor='hourlyRate'>Hourly rate</FieldLabel>
-                  <div className='relative'>
-                     <span
-                        className='pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm text-muted-foreground'
-                        aria-hidden='true'
-                     >
-                        $
-                     </span>
-                     <Input
-                        key={values.hourlyRate}
-                        id='hourlyRate'
-                        name='hourlyRate'
-                        inputMode='decimal'
-                        placeholder='75.00'
-                        autoComplete='off'
-                        className='pl-6'
-                        defaultValue={values.hourlyRate}
-                        aria-invalid={!!errors?.hourlyRate}
-                     />
-                  </div>
+                  <MoneyInput
+                     key={values.hourlyRate}
+                     id='hourlyRate'
+                     name='hourlyRate'
+                     currency={currency}
+                     suffix='/ hour'
+                     placeholder='75.00'
+                     defaultValue={values.hourlyRate}
+                     aria-invalid={!!errors?.hourlyRate}
+                  />
                   <FieldDescription>
-                     In {DEFAULT_CURRENCY}. Leave empty if you don&apos;t bill by the hour.
+                     In {currency}. Leave empty if you don&apos;t bill by the hour.
                   </FieldDescription>
                   <FieldError errors={toFieldErrors(errors?.hourlyRate)} />
                </Field>

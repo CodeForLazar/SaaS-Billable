@@ -69,18 +69,19 @@ export function ListSearch({
    );
 }
 
-/** "21–40 of 45 clients" + Previous / Next, keeping the search and status. */
+/**
+ * "21–40 of 45 clients" + Previous / Next. `pageHref` builds a page's URL, so each list keeps
+ * its own filters (a plain function is fine: this is a Server Component, nothing is serialized).
+ */
 export function ListPagination({
-   basePath,
-   query,
+   pageHref,
    page,
    pageCount,
    pageSize,
    total,
    noun
 }: {
-   basePath: string;
-   query: ListQuery;
+   pageHref: (page: number) => string;
    page: number;
    pageCount: number;
    pageSize: number;
@@ -90,7 +91,7 @@ export function ListPagination({
    const pageLink = (target: number, label: string) =>
       target >= 1 && target <= pageCount ? (
          <Link
-            href={listHref(basePath, query, { page: target })}
+            href={pageHref(target)}
             className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
          >
             {label}

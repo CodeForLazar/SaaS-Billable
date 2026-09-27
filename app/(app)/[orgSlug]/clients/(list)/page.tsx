@@ -15,7 +15,7 @@ import { formatDate } from '@/lib/format';
 import { can } from '@/lib/permissions';
 import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
-import { listQuerySchema } from '@/lib/validations/list';
+import { listHref, listQuerySchema } from '@/lib/validations/list';
 import { listClients } from '@/server/clients';
 import { requireMembership } from '@/server/organizations';
 
@@ -150,8 +150,7 @@ export default async function ClientsPage({
                </Table>
 
                <ListPagination
-                  basePath={basePath}
-                  query={query}
+                  pageHref={(target) => listHref(basePath, query, { page: target })}
                   page={page}
                   pageCount={pageCount}
                   pageSize={pageSize}

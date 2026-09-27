@@ -7,6 +7,7 @@ import { DEFAULT_PROJECT_COLOR } from '@/lib/project-colors';
 import { cn } from '@/lib/utils';
 import { listClientOptions } from '@/server/clients';
 import { requireMembership } from '@/server/organizations';
+import { getWorkspaceSettings } from '@/server/settings';
 import { createProjectAction } from '../actions';
 import { ProjectForm } from '../project-form';
 
@@ -27,6 +28,7 @@ export default async function NewProjectPage({
    if (!can(role, { project: ['create'] })) notFound();
 
    const clients = await listClientOptions(orgSlug);
+   const { currency } = await getWorkspaceSettings(orgSlug);
    const { clientId } = await searchParams;
    // Only used as a starting value, and only if it's one of the options.
    const preselected = clients.find((client) => client.id === clientId)?.id ?? '';
@@ -53,6 +55,7 @@ export default async function NewProjectPage({
             </div>
          ) : (
             <ProjectForm
+               currency={currency}
                action={createProjectAction.bind(null, organization.slug)}
                clients={clients.map((client) => ({ value: client.id, label: client.name }))}
                defaultValues={{

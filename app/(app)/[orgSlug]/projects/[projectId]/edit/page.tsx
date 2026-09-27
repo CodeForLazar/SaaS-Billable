@@ -4,6 +4,7 @@ import { centsToInput } from '@/lib/money';
 import { can } from '@/lib/permissions';
 import { DEFAULT_PROJECT_COLOR } from '@/lib/project-colors';
 import { listClientOptions } from '@/server/clients';
+import { getWorkspaceSettings } from '@/server/settings';
 import { getProject } from '@/server/projects';
 import { updateProjectAction } from '../../actions';
 import { ProjectForm } from '../../project-form';
@@ -25,6 +26,7 @@ export default async function EditProjectPage({
 
    // Active clients, plus the current one even if it's archived, so the field isn't empty.
    const clients = await listClientOptions(orgSlug, project.clientId);
+   const { currency } = await getWorkspaceSettings(orgSlug);
 
    return (
       <div className='flex w-full max-w-2xl flex-1 flex-col gap-6 p-6'>
@@ -33,6 +35,7 @@ export default async function EditProjectPage({
             <p className='text-muted-foreground'>{project.name}</p>
          </div>
          <ProjectForm
+            currency={currency}
             action={updateProjectAction.bind(null, organization.slug, project.id)}
             clients={clients.map((client) => ({
                value: client.id,

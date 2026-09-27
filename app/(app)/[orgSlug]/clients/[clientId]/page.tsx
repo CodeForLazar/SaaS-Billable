@@ -21,6 +21,7 @@ import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { getClient } from '@/server/clients';
 import { listClientProjects } from '@/server/projects';
+import { getWorkspaceSettings } from '@/server/settings';
 import { setClientArchivedAction } from '../actions';
 
 export async function generateMetadata({
@@ -38,6 +39,7 @@ export default async function ClientPage({ params }: PageProps<'/[orgSlug]/clien
    const { organization, role, client } = await getClient(orgSlug, clientId);
    const projects = await listClientProjects(orgSlug, client.id);
    const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
+   const { currency } = await getWorkspaceSettings(orgSlug);
    const activeProjects = projects.filter((project) => !project.archivedAt).length;
 
    const clientsPath = `/${organization.slug}/clients`;
@@ -161,7 +163,7 @@ export default async function ClientPage({ params }: PageProps<'/[orgSlug]/clien
                            <TableCell className='text-right tabular-nums'>
                               {project.hourlyRateCents === null
                                  ? '—'
-                                 : formatMoney(project.hourlyRateCents)}
+                                 : formatMoney(project.hourlyRateCents, currency)}
                            </TableCell>
                         </TableRow>
                      ))}
