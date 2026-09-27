@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Contact, FolderKanban, LayoutDashboard, Users } from 'lucide-react';
+import { Clock, Contact, FolderKanban, LayoutDashboard, Users } from 'lucide-react';
 import { NavUser } from '@/components/nav-user';
 import {
    Sidebar,
@@ -37,7 +37,8 @@ const navGroups = [
       items: [
          { title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
          { title: 'Clients', path: 'clients', icon: Contact },
-         { title: 'Projects', path: 'projects', icon: FolderKanban }
+         { title: 'Projects', path: 'projects', icon: FolderKanban },
+         { title: 'Time', path: 'time', icon: Clock }
       ]
    },
    {

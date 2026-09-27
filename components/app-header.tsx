@@ -10,14 +10,16 @@ const labels: Record<string, string> = {
    dashboard: 'Dashboard',
    clients: 'Clients',
    projects: 'Projects',
+   time: 'Time',
    new: 'New',
    edit: 'Edit',
    settings: 'Settings',
    members: 'Members'
 };
 
-// Top bar of every workspace page: sidebar toggle + where you are ("Settings / Members").
-export function AppHeader() {
+// Top bar of every workspace page: sidebar toggle + where you are ("Settings / Members"), and on
+// the right whatever the layout passes in (the running timer).
+export function AppHeader({ children }: { children?: React.ReactNode }) {
    const pathname = usePathname();
    // "/acme/settings/members" -> ["Settings", "Members"] (the first segment is the workspace slug)
    const trail = pathname
@@ -48,6 +50,7 @@ export function AppHeader() {
                </Fragment>
             ))}
          </nav>
+         {children}
       </header>
    );
 }
