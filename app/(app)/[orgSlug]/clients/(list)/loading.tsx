@@ -2,6 +2,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 // Shown instantly while the clients page loads on the server (Next wraps the page in a Suspense
 // boundary with this as the fallback). The sidebar and header stay; only the content area waits.
+// It lives in the (list) route group so it only wraps the list: a loading.tsx also wraps every
+// page below it, and a streamed page can't return a 404 status any more (it's sent as 200), so
+// /clients/<id> would answer a missing client with a "soft" 404.
 export default function ClientsLoading() {
    return (
       <div className='flex w-full max-w-5xl flex-1 flex-col gap-6 p-6' aria-busy='true'>

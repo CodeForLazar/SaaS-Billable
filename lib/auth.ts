@@ -6,6 +6,7 @@ import { after } from 'next/server';
 import { createElement } from 'react';
 import { db } from '@/lib/db';
 import { sendEmail } from '@/lib/mailer';
+import { ac, roles } from '@/lib/permissions';
 import InvitationEmail from '@/emails/invitation';
 import ResetPasswordEmail from '@/emails/reset-password';
 import VerifyEmail from '@/emails/verify-email';
@@ -66,6 +67,9 @@ export const auth = betterAuth({
       // Workspaces (tenants): organizations, their members + roles, invitations.
       // The user who creates an organization becomes its "owner".
       organization({
+         // Our roles: Better Auth's defaults plus our own resources (clients, ...).
+         ac,
+         roles,
          // Invitations expire after 48 hours (the default). The link opens our accept page.
          sendInvitationEmail: async ({ id, email, role, organization, inviter }) => {
             await sendEmail({

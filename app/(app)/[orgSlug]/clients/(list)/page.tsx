@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Form from 'next/form';
 import Link from 'next/link';
-import { Contact, Search } from 'lucide-react';
+import { Contact, Plus, Search } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,6 +13,7 @@ import {
    TableRow
 } from '@/components/ui/table';
 import { formatDate } from '@/lib/format';
+import { can } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { clientListQuerySchema } from '@/lib/validations/client';
 import { listClients } from '@/server/clients';
@@ -33,11 +34,18 @@ export default async function ClientsPage({
 }: PageProps<'/[orgSlug]/clients'>) {
    const { orgSlug } = await params;
    const query = clientListQuerySchema.parse(await searchParams);
-   const { organization, clients, total, page, pageCount, pageSize } = await listClients(
+   const { organization, role, clients, total, page, pageCount, pageSize } = await listClients(
       orgSlug,
       query
    );
    const basePath = `/${organization.slug}/clients`;
+   const canCreate = can(role, { client: ['create'] });
+   const newClientLink = (
+      <Link href={`${basePath}/new`} className={cn(buttonVariants())}>
+         <Plus aria-hidden='true' />
+         New client
+      </Link>
+   );
 
    // Keeps the search term when moving between pages.
    const pageHref = (target: number) => {
@@ -50,9 +58,12 @@ export default async function ClientsPage({
 
    return (
       <div className='flex w-full max-w-5xl flex-1 flex-col gap-6 p-6'>
-         <div>
-            <h1 className='text-2xl font-semibold'>Clients</h1>
-            <p className='text-muted-foreground'>The people and companies you work for.</p>
+         <div className='flex flex-wrap items-start justify-between gap-4'>
+            <div>
+               <h1 className='text-2xl font-semibold'>Clients</h1>
+               <p className='text-muted-foreground'>The people and companies you work for.</p>
+            </div>
+            {canCreate && newClientLink}
          </div>
 
          {/* next/form: a GET form that updates the URL (?q=...) with client-side navigation.
@@ -94,6 +105,7 @@ export default async function ClientsPage({
                      <p className='text-sm text-muted-foreground'>
                         Clients you add will show up here.
                      </p>
+                     {canCreate && <div className='mt-2'>{newClientLink}</div>}
                   </>
                )}
             </div>
@@ -112,7 +124,12 @@ export default async function ClientsPage({
                      {clients.map((client) => (
                         <TableRow key={client.id}>
                            <TableCell>
-                              <div className='font-medium'>{client.name}</div>
+                              <Link
+                                 href={`${basePath}/${client.id}`}
+                                 className='font-medium underline-offset-4 hover:underline'
+                              >
+                                 {client.name}
+                              </Link>
                               {client.company && (
                                  <div className='text-xs text-muted-foreground'>
                                     {client.company}
