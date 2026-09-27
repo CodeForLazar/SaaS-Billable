@@ -9,7 +9,8 @@ import {
    TableHeader,
    TableRow
 } from '@/components/ui/table';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatRelative } from '@/lib/format';
+import { getTimeZone, requestNow } from '@/lib/time-zone';
 import { getMembersOverview } from '@/server/members';
 import { requireMembership } from '@/server/organizations';
 import { inviteMemberAction } from './actions';
@@ -30,6 +31,8 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
    const { orgSlug } = await params;
    const { organization, members, invitations, canCancelInvitations, assignableRoles } =
       await getMembersOverview(orgSlug);
+   const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
+   const now = requestNow();
 
    return (
       <div className='flex w-full max-w-4xl flex-1 flex-col gap-10 p-6'>
@@ -82,7 +85,7 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                            </div>
                         </TableCell>
                         <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
-                           {formatDate(member.createdAt)}
+                           {formatDate(member.createdAt, timeZone)}
                         </TableCell>
                         <TableCell>
                            <MemberActions
@@ -148,7 +151,13 @@ export default async function MembersPage({ params }: PageProps<'/[orgSlug]/sett
                                  {invitation.user.name}
                               </TableCell>
                               <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
-                                 {formatDate(invitation.expiresAt)}
+                                 {/* "in 2 days" reads faster than a date; the date is on hover */}
+                                 <time
+                                    dateTime={invitation.expiresAt.toISOString()}
+                                    title={formatDate(invitation.expiresAt, timeZone)}
+                                 >
+                                    {formatRelative(invitation.expiresAt, now)}
+                                 </time>
                               </TableCell>
                               {canCancelInvitations && (
                                  <TableCell className='text-right'>

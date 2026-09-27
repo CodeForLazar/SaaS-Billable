@@ -9,6 +9,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { formatDate } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
 import { can } from '@/lib/permissions';
+import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { getProject } from '@/server/projects';
 import { setProjectArchivedAction } from '../actions';
@@ -28,6 +29,7 @@ export default async function ProjectPage({
    // 404 inside the app shell if the project doesn't exist or belongs to another workspace.
    const { organization, role, project } = await getProject(orgSlug, projectId);
    const projectsPath = `/${organization.slug}/projects`;
+   const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
    const archived = !!project.archivedAt;
 
    return (
@@ -87,9 +89,9 @@ export default async function ProjectPage({
                   ? 'Not set'
                   : `${formatMoney(project.hourlyRateCents)} per hour`}
             </Detail>
-            <Detail label='Added'>{formatDate(project.createdAt)}</Detail>
+            <Detail label='Added'>{formatDate(project.createdAt, timeZone)}</Detail>
             {project.archivedAt && (
-               <Detail label='Archived'>{formatDate(project.archivedAt)}</Detail>
+               <Detail label='Archived'>{formatDate(project.archivedAt, timeZone)}</Detail>
             )}
          </DetailList>
       </div>

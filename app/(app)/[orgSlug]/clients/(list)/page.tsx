@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { formatDate } from '@/lib/format';
 import { can } from '@/lib/permissions';
+import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { listQuerySchema } from '@/lib/validations/list';
 import { listClients } from '@/server/clients';
@@ -38,6 +39,7 @@ export default async function ClientsPage({
       query
    );
    const basePath = `/${organization.slug}/clients`;
+   const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
    const canCreate = can(role, { client: ['create'] });
    const archived = query.status === 'archived';
    const newClientLink = (
@@ -140,7 +142,7 @@ export default async function ClientsPage({
                               {client._count.projects}
                            </TableCell>
                            <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
-                              {formatDate(client.archivedAt ?? client.createdAt)}
+                              {formatDate(client.archivedAt ?? client.createdAt, timeZone)}
                            </TableCell>
                         </TableRow>
                      ))}

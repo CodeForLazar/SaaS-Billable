@@ -15,6 +15,7 @@ import {
 import { formatDate } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
 import { can } from '@/lib/permissions';
+import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { listQuerySchema } from '@/lib/validations/list';
 import { requireMembership } from '@/server/organizations';
@@ -39,6 +40,7 @@ export default async function ProjectsPage({
       query
    );
    const basePath = `/${organization.slug}/projects`;
+   const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
    const clientsPath = `/${organization.slug}/clients`;
    const canCreate = can(role, { project: ['create'] });
    const archived = query.status === 'archived';
@@ -145,7 +147,7 @@ export default async function ProjectsPage({
                                  : formatMoney(project.hourlyRateCents)}
                            </TableCell>
                            <TableCell className='hidden text-right text-muted-foreground sm:table-cell'>
-                              {formatDate(project.archivedAt ?? project.createdAt)}
+                              {formatDate(project.archivedAt ?? project.createdAt, timeZone)}
                            </TableCell>
                         </TableRow>
                      ))}

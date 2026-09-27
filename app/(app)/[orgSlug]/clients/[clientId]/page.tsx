@@ -17,6 +17,7 @@ import {
 import { formatDate } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
 import { can } from '@/lib/permissions';
+import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
 import { getClient } from '@/server/clients';
 import { listClientProjects } from '@/server/projects';
@@ -36,6 +37,7 @@ export default async function ClientPage({ params }: PageProps<'/[orgSlug]/clien
    // to another workspace.
    const { organization, role, client } = await getClient(orgSlug, clientId);
    const projects = await listClientProjects(orgSlug, client.id);
+   const timeZone = await getTimeZone(); // dates on the user's calendar, not the server's
    const activeProjects = projects.filter((project) => !project.archivedAt).length;
 
    const clientsPath = `/${organization.slug}/clients`;
@@ -106,8 +108,10 @@ export default async function ClientPage({ params }: PageProps<'/[orgSlug]/clien
             <Detail label='Notes' className='break-words whitespace-pre-line'>
                {client.notes ?? '—'}
             </Detail>
-            <Detail label='Added'>{formatDate(client.createdAt)}</Detail>
-            {client.archivedAt && <Detail label='Archived'>{formatDate(client.archivedAt)}</Detail>}
+            <Detail label='Added'>{formatDate(client.createdAt, timeZone)}</Detail>
+            {client.archivedAt && (
+               <Detail label='Archived'>{formatDate(client.archivedAt, timeZone)}</Detail>
+            )}
          </DetailList>
 
          <section aria-labelledby='projects-heading' className='flex flex-col gap-4'>

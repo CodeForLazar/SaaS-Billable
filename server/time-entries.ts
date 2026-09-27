@@ -1,4 +1,6 @@
 import 'server-only';
+import { TZDate } from '@date-fns/tz';
+import { differenceInSeconds, startOfDay, subDays } from 'date-fns';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 import { db } from '@/lib/db';
@@ -18,7 +20,7 @@ export type TimerResult =
 function finishAt(startedAt: Date, endedAt: Date) {
    return {
       endedAt,
-      durationSec: Math.max(0, Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000))
+      durationSec: Math.max(0, differenceInSeconds(endedAt, startedAt))
    };
 }
 
@@ -117,10 +119,15 @@ export async function stopTimer(): Promise<TimerResult> {
    return { ok: true };
 }
 
-/** The signed-in user's finished entries in this workspace from the last 14 days, newest first. */
-export async function listMyRecentEntries(orgSlug: string) {
+/**
+ * The signed-in user's finished entries in this workspace from the last 14 days (today and the
+ * 13 days before, as calendar days on the user's clock), newest first.
+ */
+export async function listMyRecentEntries(orgSlug: string, timeZone: string) {
    const { session, organization } = await requireMembership(orgSlug);
-   const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+   // Midnight 13 days ago in the user's zone, so the oldest day in the list is complete.
+   // (Not "now minus 14 × 24 h": that cuts the oldest day in half, and a day isn't always 24 h.)
+   const since = new Date(startOfDay(subDays(TZDate.tz(timeZone), 13)).getTime()); // plain Date for Prisma
 
    return db.timeEntry.findMany({
       where: {

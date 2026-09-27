@@ -1,3 +1,5 @@
+import { TZDate } from '@date-fns/tz';
+import { subDays } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Clock } from 'lucide-react';
@@ -12,7 +14,6 @@ import { dayKey, formatDuration, formatTime, formatWeekday } from '@/lib/format'
 import { can } from '@/lib/permissions';
 import { getTimeZone, requestNow } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
-import { utcToZoned } from '@/lib/zoned-time';
 import { requireMembership } from '@/server/organizations';
 import { getRunningTimer, listMyRecentEntries, listTrackableProjects } from '@/server/time-entries';
 import { createTimeEntryAction, startTimerAction } from './actions';
@@ -31,11 +32,11 @@ export async function generateMetadata({
 export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>) {
    const { orgSlug } = await params;
    const { organization, role } = await requireMembership(orgSlug);
-   const [timer, entries, projects, timeZone] = await Promise.all([
+   const timeZone = await getTimeZone();
+   const [timer, entries, projects] = await Promise.all([
       getRunningTimer(),
-      listMyRecentEntries(orgSlug),
-      listTrackableProjects(orgSlug),
-      getTimeZone()
+      listMyRecentEntries(orgSlug, timeZone),
+      listTrackableProjects(orgSlug)
    ]);
    const timerHere = timer?.organization.slug === organization.slug ? timer : null;
 
@@ -45,8 +46,10 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
    // Entries grouped by calendar day in the user's time zone, with a total per day.
    const days: { key: string; label: string; totalSec: number; entries: typeof entries }[] = [];
    const now = requestNow();
-   const today = dayKey(new Date(now), timeZone);
-   const yesterday = dayKey(new Date(now - 24 * 60 * 60 * 1000), timeZone);
+   // "Now" on the user's clock; subDays works in that zone (a day isn't always 24 hours).
+   const nowHere = new TZDate(now, timeZone);
+   const today = dayKey(nowHere, timeZone);
+   const yesterday = dayKey(subDays(nowHere, 1), timeZone);
    for (const entry of entries) {
       const key = dayKey(entry.startedAt, timeZone);
       let day = days.at(-1);
@@ -138,7 +141,7 @@ export default async function TimePage({ params }: PageProps<'/[orgSlug]/time'>)
                               projectId: '',
                               description: '',
                               billable: 'on',
-                              date: utcToZoned(new Date(now), timeZone).date,
+                              date: today,
                               start: '',
                               end: ''
                            }}
