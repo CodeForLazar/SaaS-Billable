@@ -3,7 +3,7 @@
 declare namespace NodeJS {
    interface ProcessEnv {
       // Database
-      DATABASE_URL: string;
+      TEST_DATABASE_URL: string;
 
       // Auth (Better Auth)
       BETTER_AUTH_SECRET: string;
