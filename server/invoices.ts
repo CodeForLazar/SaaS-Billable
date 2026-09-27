@@ -1,10 +1,11 @@
 import 'server-only';
 import { randomBytes } from 'node:crypto';
 import { TZDate } from '@date-fns/tz';
-import { addDays } from 'date-fns';
+import { addDays, subHours } from 'date-fns';
 import { notFound } from 'next/navigation';
 import { cache, createElement } from 'react';
 import InvoiceEmail from '@/emails/invoice';
+import InvoiceReminderEmail, { reminderSubject } from '@/emails/invoice-reminder';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { dayKey, formatDate, formatDayRange } from '@/lib/format';
@@ -644,5 +645,90 @@ export async function emailInvoice(orgSlug: string, invoiceId: string): Promise<
          { filename: invoicePdfFilename(view), content: pdf, contentType: 'application/pdf' }
       ]
    });
+   return { ok: true, invoiceId, orgSlug: organization.slug };
+}
+
+/** At most one reminder per invoice in this many hours, so a client is never flooded. */
+export const REMINDER_INTERVAL_HOURS = 24;
+
+/**
+ * Emails a payment reminder for a SENT invoice (overdue or not yet due), with the PDF and the
+ * link where the client can pay. Records when it was sent and how many were sent.
+ */
+export async function sendInvoiceReminder(
+   orgSlug: string,
+   invoiceId: string
+): Promise<InvoiceResult> {
+   const { organization, role } = await requireMembership(orgSlug);
+   if (!can(role, { invoice: ['send'] })) {
+      return { ok: false, message: 'You are not allowed to send invoices.' };
+   }
+   const found = await db.invoice.findFirst({
+      where: { id: invoiceId, organizationId: organization.id },
+      select: { status: true, billToEmail: true, publicToken: true, lastReminderAt: true }
+   });
+   if (!found) return gone;
+   if (found.status !== 'SENT' || !found.publicToken) {
+      return { ok: false, message: 'Only a sent, unpaid invoice can get a reminder.' };
+   }
+   if (!found.billToEmail) {
+      return { ok: false, message: 'This invoice has no client email address.' };
+   }
+
+   // Claim the reminder before sending: the condition makes two clicks (or two admins) at the
+   // same moment send one email, not two.
+   const now = new Date();
+   const { count } = await db.invoice.updateMany({
+      where: {
+         id: invoiceId,
+         organizationId: organization.id,
+         status: 'SENT',
+         OR: [
+            { lastReminderAt: null },
+            { lastReminderAt: { lte: subHours(now, REMINDER_INTERVAL_HOURS) } }
+         ]
+      },
+      data: { lastReminderAt: now, reminderCount: { increment: 1 } }
+   });
+   if (!count) {
+      return {
+         ok: false,
+         message: `A reminder was already sent in the last ${REMINDER_INTERVAL_HOURS} hours.`
+      };
+   }
+
+   try {
+      // "Overdue" on the sender's calendar, the same as the badge they see.
+      const { view } = await getInvoiceView(orgSlug, invoiceId);
+      const pdf = await renderInvoicePdf(view);
+      const details = {
+         number: view.number ?? '',
+         dueDate: view.dueDate ? formatDate(view.dueDate, DATE_ONLY_ZONE) : '',
+         overdue: view.status === 'overdue'
+      };
+      await sendEmail({
+         to: found.billToEmail,
+         subject: reminderSubject(details),
+         replyTo: view.from.email,
+         react: createElement(InvoiceReminderEmail, {
+            ...details,
+            fromName: view.from.name,
+            clientName: view.billTo.name,
+            total: formatMoney(view.totalCents, view.currency),
+            url: publicInvoiceUrl(found.publicToken)
+         }),
+         attachments: [
+            { filename: invoicePdfFilename(view), content: pdf, contentType: 'application/pdf' }
+         ]
+      });
+   } catch (error) {
+      // Not sent (SMTP down, ...): give the claim back, so it can be retried straight away.
+      console.error('Sending the invoice reminder failed', error);
+      await db.invoice.updateMany({
+         where: { id: invoiceId, organizationId: organization.id, lastReminderAt: now },
+         data: { lastReminderAt: found.lastReminderAt, reminderCount: { decrement: 1 } }
+      });
+      return { ok: false, message: 'The reminder could not be sent. Please try again later.' };
+   }
    return { ok: true, invoiceId, orgSlug: organization.slug };
 }

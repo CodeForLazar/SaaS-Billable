@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Ban, CircleCheck, Download, Mail, Trash2 } from 'lucide-react';
+import { ArrowLeft, Ban, BellRing, CircleCheck, Download, Mail, Trash2 } from 'lucide-react';
 import { ConfirmActionButton } from '@/components/confirm-action-button';
 import { InvoiceDocument } from '@/components/invoice-document';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate, formatTime } from '@/lib/format';
+import { DATE_ONLY_ZONE } from '@/lib/invoice-status';
 import { basisPointsToPercent, centsToInput, formatMoney } from '@/lib/money';
 import { getTimeZone } from '@/lib/time-zone';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ import {
    markPaidAction,
    resendInvoiceAction,
    sendInvoiceAction,
+   sendReminderAction,
    updateDetailsAction,
    updateLineAction,
    voidInvoiceAction
@@ -51,6 +53,8 @@ export default async function InvoicePage({
    const basePath = `/${slug}/invoices`;
    const draft = invoice.status === 'DRAFT';
    const linesById = new Map(invoice.lines.map((line) => [line.id, line]));
+   const overdue = view.status === 'overdue';
+   const dueDate = invoice.dueDate ? formatDate(invoice.dueDate, DATE_ONLY_ZONE) : '';
 
    return (
       <div className='flex w-full max-w-4xl flex-1 flex-col gap-6 p-6'>
@@ -119,6 +123,19 @@ export default async function InvoicePage({
                      </ConfirmActionButton>
                      {invoice.billToEmail && (
                         <ConfirmActionButton
+                           action={sendReminderAction.bind(null, slug, invoice.id)}
+                           title='Send a payment reminder?'
+                           description={`A friendly reminder goes to ${invoice.billToEmail}: the invoice ${overdue ? `was due on ${dueDate} and is overdue` : `is due on ${dueDate}`}. The PDF and the payment link are included. At most one reminder per day.`}
+                           confirmLabel='Send reminder'
+                           pendingLabel='Sending…'
+                           successMessage={`Reminder sent to ${invoice.billToEmail}.`}
+                        >
+                           <BellRing aria-hidden='true' />
+                           Send reminder
+                        </ConfirmActionButton>
+                     )}
+                     {invoice.billToEmail && (
+                        <ConfirmActionButton
                            action={resendInvoiceAction.bind(null, slug, invoice.id)}
                            title='Email the invoice again?'
                            description={`It goes to ${invoice.billToEmail}, with the PDF attached.`}
@@ -151,6 +168,22 @@ export default async function InvoicePage({
             <p className='rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground'>
                This is a draft: only your team can see it. Check the lines, then send it. It gets
                its number when sent.
+            </p>
+         )}
+
+         {invoice.status === 'SENT' && (overdue || invoice.lastReminderAt) && (
+            <p
+               className={cn(
+                  'rounded-lg border px-4 py-3 text-sm',
+                  overdue ? 'border-destructive/40 text-destructive' : 'text-muted-foreground'
+               )}
+            >
+               {overdue && `Overdue since ${dueDate}. `}
+               {invoice.lastReminderAt
+                  ? `Last reminder sent ${formatDate(invoice.lastReminderAt, timeZone)} at ${formatTime(invoice.lastReminderAt, timeZone)}${invoice.reminderCount > 1 ? ` (${invoice.reminderCount} reminders so far)` : ''}.`
+                  : invoice.billToEmail
+                    ? 'No reminder sent yet.'
+                    : 'Add an email address to the client to send reminders, or contact them directly.'}
             </p>
          )}
 

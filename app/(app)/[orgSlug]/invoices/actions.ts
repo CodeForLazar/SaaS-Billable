@@ -18,6 +18,7 @@ import {
    emailInvoice,
    issueInvoice,
    markInvoicePaid,
+   sendInvoiceReminder,
    updateInvoiceDetails,
    updateInvoiceLine,
    voidInvoice
@@ -219,4 +220,15 @@ export async function resendInvoiceAction(orgSlug: string, invoiceId: string): P
    if (!id.safeParse(invoiceId).success) return invalid;
    const result = await tryEmail(orgSlug, invoiceId);
    return result.ok && result.warning ? { ok: false, message: result.warning } : result;
+}
+
+/** A payment reminder for a sent invoice (at most one per 24 hours). */
+export async function sendReminderAction(orgSlug: string, invoiceId: string): Promise<SendResult> {
+   if (!id.safeParse(invoiceId).success) return invalid;
+   // Not wrapped in try/catch: requireMembership's notFound() must reach Next (a 404), and the
+   // service already turns a failed email into a message.
+   const result = await sendInvoiceReminder(orgSlug, invoiceId);
+   if (!result.ok) return result;
+   refresh();
+   return { ok: true };
 }
